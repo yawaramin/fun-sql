@@ -1,0 +1,3 @@
+(library
+ (name sql)
+ (libraries sqlite3))
