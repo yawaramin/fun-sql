@@ -120,9 +120,9 @@ let ret_blob stmt a =
 (* We have to parse the value tuple of the insert statement to be able to
    multiply it a number of times if needed for a batch insert. *)
 
-let sp_r = Str.regexp_string " "
+let sp_r = Str.regexp " +"
 let wsp_r = Str.regexp
-  @@ Printf.sprintf "[%c%c%c]" (Char.chr 9) (Char.chr 10) (Char.chr 13)
+  @@ Printf.sprintf "[%c%c%c]+" (Char.chr 9) (Char.chr 10) (Char.chr 13)
 let values_r = Str.regexp_case_fold
   {|^\(insert into .* values *\)\(([^)]+)\)\(.*\)$|}
 

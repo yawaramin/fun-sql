@@ -43,7 +43,7 @@ val batch_insert :
   'a list ->
   ('b query -> 'a -> 'b query) ->
   'b query
-(** [insert db sql objs args] inserts into the database [db], running
+(** [batch_insert db sql objs args] inserts into the database [db], running
     the query [sql], the row tuples obtained by encoding the list of [objs]
     using the [args] parameters and return type encodings.
 
