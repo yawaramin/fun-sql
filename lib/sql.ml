@@ -1,3 +1,20 @@
+(* Copyright 2022 Yawar Amin
+
+   This file is part of ocaml_sql_query.
+
+   ocaml_sql_query is free software: you can redistribute it and/or modify it
+   under the terms of the GNU General Public License as published by the Free
+   Software Foundation, either version 3 of the License, or (at your option) any
+   later version.
+
+   ocaml_sql_query is distributed in the hope that it will be useful, but
+   WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+   FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more
+   details.
+
+   You should have received a copy of the GNU General Public License along with
+   ocaml_sql_query. If not, see <https://www.gnu.org/licenses/>. *)
+
 let ( let* ) result f = match result with
   | Ok x -> f x
   | (Error _) as error -> error
@@ -5,9 +22,8 @@ let ( let* ) result f = match result with
 open Sqlite3
 
 type ('a, 's) t = stmt -> 's -> 'a
-type 'a param = (('a, int) t -> 'a, int) t
-type 'a decoder = Data.t array -> ('a, string) result
-type 'a encoder = 'a -> Data.t list
+type 'a query = ('a, int) t -> 'a
+type 'a param = ('a query, int) t
 
 let result_of = function
   | Rc.OK
@@ -114,7 +130,7 @@ let pre_pos = 1
 let tuple_pos = 2
 let post_pos = 3
 
-let insert db sql encoder objs =
+let batch_insert db sql objs =
   let sql = sql
     |> String.trim
     |> Str.global_replace wsp_r " "
@@ -126,9 +142,6 @@ let insert db sql encoder objs =
     let sql =
       Str.matched_group pre_pos sql ^ tuples ^ Str.matched_group post_pos sql
     in
-    let stmt = prepare db sql in
-    let data = objs |> List.map encoder |> List.concat in
-    ignore (bind_values stmt data);
-    fun k -> k stmt 0
+    fun k -> List.fold_left k (query db sql) objs
   else
     failwith ("insert: expected valid statement, got '" ^ sql ^ "'")
