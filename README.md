@@ -52,9 +52,10 @@ let ret_person = ret @@ function
   | _ -> Error "malformed data"
 (* val ret_person : (person Seq.t, int) Sql.t = <abstr> *)
 
-let person_1 =
-  query db "select name, age from people where rowid = ?" (int 1) ret_person
-(* val person_1 : person Seq.t = <fun> *)
+(* Assert resultset has a single row and map it *)
+let person_1 = only
+  @@ query db "select name, age from people where rowid = ?" (int 1) ret_person
+(* val person_1 : person = {name = "A"; age = 1} *)
 ```
 
 ### Batch insert
