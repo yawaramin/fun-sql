@@ -24,6 +24,7 @@ open Sql
 
 (* Test DB *)
 let db = db_open ":memory:"
+(* val db : Sqlite3.db = <abstr> *)
 
 (* DDL query with no arguments and no return *)
 let _ = query
@@ -41,6 +42,7 @@ let _ = query
 
 (* Get text value from DB *)
 let name_1 = query db "select name from people where rowid = ?" (int 1) ret_text
+(* val name_1 : string Seq.t = <fun> *)
 
 (* Map return data to a custom type on the fly *)
 type person = { name : string; age : int }
@@ -48,9 +50,11 @@ type person = { name : string; age : int }
 let ret_person = ret @@ function
   | [|Data.TEXT name; INT age|] -> Ok { name; age = Int64.to_int age }
   | _ -> Error "malformed data"
+(* val ret_person : (person Seq.t, int) Sql.t = <abstr> *)
 
 let person_1 =
   query db "select name, age from people where rowid = ?" (int 1) ret_person
+(* val person_1 : person Seq.t = <fun> *)
 ```
 
 ### Batch insert
