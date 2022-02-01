@@ -76,3 +76,10 @@ val ret_int64 : (int64 Seq.t, _) t
 val ret_float : (float Seq.t, _) t
 val ret_text : (string Seq.t, _) t
 val ret_blob : (string Seq.t, _) t
+
+val only : 'a Seq.t -> 'a
+(** [only seq] is the first and only element of [seq]. This is a convenience
+    function because all queries return seqs but sometimes we want only a single
+    item, otherwise it should be an error.
+
+    @raise Failure if seq has 0 or >1 items. *)

@@ -117,6 +117,18 @@ let ret_blob stmt a =
   in
   ret mapper stmt a
 
+let only_fail typ =
+  let msg = if typ then "more than one" else "none" in
+  failwith ("Seq.only: require exactly one item, found " ^ msg)
+
+let only seq = match seq () with
+  | Seq.Nil ->
+    only_fail false
+  | Cons (a, seq) ->
+    match seq () with
+    | Nil -> a
+    | Cons (_, _) -> only_fail true
+
 (* We have to parse the value tuple of the insert statement to be able to
    multiply it a number of times if needed for a batch insert. *)
 
