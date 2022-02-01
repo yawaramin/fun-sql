@@ -82,4 +82,7 @@ val only : 'a Seq.t -> 'a
     function because all queries return seqs but sometimes we want only a single
     item, otherwise it should be an error.
 
+    Use this in preference to calculating the length of the [seq], which would
+    force the entire data structure.
+
     @raise Failure if seq has 0 or >1 items. *)
