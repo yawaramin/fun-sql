@@ -34,39 +34,18 @@ let query db sql =
   let stmt = prepare db sql in
   fun k -> k stmt 1
 
-let next pos stmt k = k stmt (succ pos)
+let param typ stmt pos value =
+  ignore (typ stmt pos value);
+  fun k -> k stmt (succ pos)
 
-let text value stmt pos =
-  ignore (bind_text stmt pos value);
-  next pos stmt
-
-let bool value stmt pos =
-  ignore (bind_bool stmt pos value);
-  next pos stmt
-
-let int value stmt pos =
-  ignore (bind_int stmt pos value);
-  next pos stmt
-
-let nativeint value stmt pos =
-  ignore (bind_nativeint stmt pos value);
-  next pos stmt
-
-let int32 value stmt pos =
-  ignore (bind_int32 stmt pos value);
-  next pos stmt
-
-let int64 value stmt pos =
-  ignore (bind_int64 stmt pos value);
-  next pos stmt
-
-let double value stmt pos =
-  ignore (bind_double stmt pos value);
-  next pos stmt
-
-let blob value stmt pos =
-  ignore (bind_blob stmt pos value);
-  next pos stmt
+let text value stmt pos = param bind_text stmt pos value
+let bool value stmt pos = param bind_bool stmt pos value
+let int value stmt pos = param bind_int stmt pos value
+let nativeint value stmt pos = param bind_nativeint stmt pos value
+let int32 value stmt pos = param bind_int32 stmt pos value
+let int64 value stmt pos = param bind_int64 stmt pos value
+let double value stmt pos = param bind_double stmt pos value
+let blob value stmt pos = param bind_blob stmt pos value
 
 let ret decoder stmt _ =
   let rows () = match step stmt with
@@ -106,9 +85,9 @@ let ret_float stmt a =
 let ret_text stmt a =
   let mapper = function
     | [|Data.INT value|] -> Ok (Int64.to_string value)
-    | [|Data.FLOAT value|] -> Ok (string_of_float value)
-    | [|Data.BLOB value|]
-    | [|Data.TEXT value|] -> Ok value
+    | [|FLOAT value|] -> Ok (string_of_float value)
+    | [|BLOB value|]
+    | [|TEXT value|] -> Ok value
     | _ -> Error "Expected text"
   in
   ret mapper stmt a
