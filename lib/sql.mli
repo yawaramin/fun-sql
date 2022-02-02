@@ -74,8 +74,11 @@ val ret : (Data.t array -> ('a, string) result) -> ('a Seq.t, _) t
 val ret_unit : ((unit, string) result, _) t
 val ret_int64 : (int64 Seq.t, _) t
 val ret_float : (float Seq.t, _) t
+
 val ret_text : (string Seq.t, _) t
-val ret_blob : (string Seq.t, _) t
+(** Also handles values of all other types. Use this when SQLite can change the
+    exact type of value it returns at runtime, e.g. for very large numbers it
+    can return text. *)
 
 val only : 'a Seq.t -> 'a
 (** [only seq] is the first and only element of [seq]. This is a convenience

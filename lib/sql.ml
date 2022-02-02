@@ -105,15 +105,11 @@ let ret_float stmt a =
 
 let ret_text stmt a =
   let mapper = function
+    | [|Data.INT value|] -> Ok (Int64.to_string value)
+    | [|Data.FLOAT value|] -> Ok (string_of_float value)
+    | [|Data.BLOB value|]
     | [|Data.TEXT value|] -> Ok value
     | _ -> Error "Expected text"
-  in
-  ret mapper stmt a
-
-let ret_blob stmt a =
-  let mapper = function
-    | [|Data.BLOB value|] -> Ok value
-    | _ -> Error "Expected blob"
   in
   ret mapper stmt a
 
