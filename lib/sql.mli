@@ -64,9 +64,12 @@ val blob : string -> _ param
 
 (** {2 Query return types} *)
 
-val ret : (Data.t array -> ('a, string) result) -> ('a Seq.t, _) t
-(** [ret decoder] is a custom return type encoding for a resultset into a
-    sequence of values of the type decoded by [decoder].
+val ret : (Data.t array -> 'a) -> ('a Seq.t, _) t
+(** [ret decode] is a custom return type encoding for a resultset into a
+    sequence of values of the type decoded by [decode].
+
+    [decode] constructs a value of the custom type if possible, else raises
+    [Failure].
 
     @raise Invalid_argument if any row cannot be decoded.
     @raise Failure if an unexpected result code is encountered. *)

@@ -47,13 +47,10 @@ let int64 value stmt pos = param bind_int64 stmt pos value
 let double value stmt pos = param bind_double stmt pos value
 let blob value stmt pos = param bind_blob stmt pos value
 
-let ret decoder stmt _ =
+let ret decode stmt _ =
   let rows () = match step stmt with
     | ROW ->
-      begin match stmt |> row_data |> decoder with
-      | Ok obj -> Some (obj, ())
-      | Error msg -> invalid_arg msg
-      end
+      Some (stmt |> row_data |> decode, ())
     | DONE ->
       None
     | rc ->
@@ -70,25 +67,25 @@ let ret_unit stmt _ =
 
 let ret_int64 stmt a =
   let mapper = function
-    | [|Data.INT value|] -> Ok value
-    | _ -> Error "Expected int"
+    | [|Data.INT value|] -> value
+    | _ -> failwith "Expected int"
   in
   ret mapper stmt a
 
 let ret_float stmt a =
   let mapper = function
-    | [|Data.FLOAT value|] -> Ok value
-    | _ -> Error "Expected float"
+    | [|Data.FLOAT value|] -> value
+    | _ -> failwith "Expected float"
   in
   ret mapper stmt a
 
 let ret_text stmt a =
   let mapper = function
-    | [|Data.INT value|] -> Ok (Int64.to_string value)
-    | [|FLOAT value|] -> Ok (string_of_float value)
+    | [|Data.INT value|] -> Int64.to_string value
+    | [|FLOAT value|] -> string_of_float value
     | [|BLOB value|]
-    | [|TEXT value|] -> Ok value
-    | _ -> Error "Expected text"
+    | [|TEXT value|] -> value
+    | _ -> failwith "Expected text"
   in
   ret mapper stmt a
 
