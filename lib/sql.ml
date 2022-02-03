@@ -15,20 +15,11 @@
    You should have received a copy of the GNU General Public License along with
    ocaml_sql_query. If not, see <https://www.gnu.org/licenses/>. *)
 
-let ( let* ) result f = match result with
-  | Ok x -> f x
-  | (Error _) as error -> error
-
 open Sqlite3
 
 type ('a, 's) t = stmt -> 's -> 'a
 type 'a query = ('a, int) t -> 'a
 type 'a param = ('a query, int) t
-
-let result_of = function
-  | Rc.OK
-  | DONE -> Ok ()
-  | rc -> Error (Rc.to_string rc)
 
 let query db sql =
   let stmt = prepare db sql in
@@ -61,9 +52,14 @@ let ret decode stmt _ =
   ignore (reset stmt);
   seq
 
+let check_rc = function
+  | Rc.OK
+  | DONE -> ()
+  | rc -> failwith (Rc.to_string rc)
+
 let ret_unit stmt _ =
-  let* () = result_of @@ step stmt in
-  result_of @@ reset stmt
+  check_rc @@ step stmt;
+  check_rc @@ reset stmt
 
 let ret_int64 stmt a =
   let mapper = function

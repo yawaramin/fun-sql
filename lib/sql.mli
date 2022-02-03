@@ -74,7 +74,7 @@ val ret : (Data.t array -> 'a) -> ('a Seq.t, _) t
     @raise Invalid_argument if any row cannot be decoded.
     @raise Failure if an unexpected result code is encountered. *)
 
-val ret_unit : ((unit, string) result, _) t
+val ret_unit : (unit, _) t
 val ret_int64 : (int64 Seq.t, _) t
 val ret_float : (float Seq.t, _) t
 
