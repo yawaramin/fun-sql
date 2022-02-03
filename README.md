@@ -26,18 +26,28 @@ let db = Sqlite3.db_open ":memory:"
 (* val db : Sqlite3.db = <abstr> *)
 
 (* DDL query with no arguments and no return *)
-query db "create table people (name text not null, age int not null)" unit
+let () = query db "create table people (name text not null, age int)" unit
 
 (* Insert query with single row *)
-query db "insert into people (name, age) values (?, ?)" (text "A") (int 1) unit
+let () = query
+  db
+  "insert into people (name, age) values (?, ?)"
+  (text "A") (int 1) unit
 
 (* Get single column of results from DB *)
 let names = query
   db
   "select name from people where rowid = ?"
-  (int 1)
-  @@ ret @@ text' 0
+  (int 1) @@ ret @@ text' 0
 (* val names : string Seq.t = <fun> *)
+
+(* Get optional values *)
+let () = query db "insert into people (name) values (?)" (text "B") unit
+let people = List.of_seq
+  @@ query db "select name, age from people"
+  @@ ret @@ fun row -> text' 0 row, opt int' 1 row
+(* val people : (string * int option) list =
+     [("A", Some 1); ("B", None)] *)
 
 (* Map return data to a custom type on the fly *)
 type person = { name : string; age : int }

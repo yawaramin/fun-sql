@@ -68,7 +68,7 @@ let int64' pos row = match row.(pos) with
 
 let int' pos row = Int64.to_int @@ int64' pos row
 
-let float pos row = match row.(pos) with
+let float' pos row = match row.(pos) with
   | Data.FLOAT value -> value
   | _ -> failwith "Expected float"
 
