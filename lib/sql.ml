@@ -20,6 +20,7 @@ open Sqlite3
 type ('a, 's) t = stmt -> 's -> 'a
 type 'a query = ('a, int) t -> 'a
 type 'a param = ('a query, int) t
+type row = Data.t array
 
 let query db sql =
   let stmt = prepare db sql in
@@ -57,33 +58,30 @@ let check_rc = function
   | DONE -> ()
   | rc -> failwith (Rc.to_string rc)
 
-let ret_unit stmt _ =
+let unit stmt _ =
   check_rc @@ step stmt;
   check_rc @@ reset stmt
 
-let ret_int64 stmt a =
-  let mapper = function
-    | [|Data.INT value|] -> value
-    | _ -> failwith "Expected int"
-  in
-  ret mapper stmt a
+let int64' pos row = match row.(pos) with
+  | Data.INT value -> value
+  | _ -> failwith "Expected int"
 
-let ret_float stmt a =
-  let mapper = function
-    | [|Data.FLOAT value|] -> value
-    | _ -> failwith "Expected float"
-  in
-  ret mapper stmt a
+let int' pos row = Int64.to_int @@ int64' pos row
 
-let ret_text stmt a =
-  let mapper = function
-    | [|Data.INT value|] -> Int64.to_string value
-    | [|FLOAT value|] -> string_of_float value
-    | [|BLOB value|]
-    | [|TEXT value|] -> value
-    | _ -> failwith "Expected text"
-  in
-  ret mapper stmt a
+let float pos row = match row.(pos) with
+  | Data.FLOAT value -> value
+  | _ -> failwith "Expected float"
+
+let text' pos row = match row.(pos) with
+  | Data.INT value -> Int64.to_string value
+  | FLOAT value -> string_of_float value
+  | BLOB value
+  | TEXT value -> value
+  | _ -> failwith "Expected text"
+
+let opt dec col row = match row.(col) with
+  | Data.NULL -> None
+  | _ -> Some (dec col row)
 
 let only_fail typ =
   let msg = if typ then "more than one" else "none" in

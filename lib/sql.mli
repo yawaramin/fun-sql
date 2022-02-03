@@ -64,7 +64,12 @@ val blob : string -> _ param
 
 (** {2 Query return types} *)
 
-val ret : (Data.t array -> 'a) -> ('a Seq.t, _) t
+val unit : (unit, _) t
+(** [unit] indicates that the query doesn't return any meaningful output. *)
+
+type row = Data.t array
+
+val ret : (row -> 'a) -> ('a Seq.t, _) t
 (** [ret decode] is a custom return type encoding for a resultset into a
     sequence of values of the type decoded by [decode].
 
@@ -74,14 +79,20 @@ val ret : (Data.t array -> 'a) -> ('a Seq.t, _) t
     @raise Invalid_argument if any row cannot be decoded.
     @raise Failure if an unexpected result code is encountered. *)
 
-val ret_unit : (unit, _) t
-val ret_int64 : (int64 Seq.t, _) t
-val ret_float : (float Seq.t, _) t
+(** {3 Helpers to get typed values from columns} *)
 
-val ret_text : (string Seq.t, _) t
+val int' : int -> row -> int
+val int64' : int -> row -> int64
+val float' : int -> row -> float
+
+val text' : int -> row -> string
 (** Also handles values of all other types. Use this when SQLite can change the
     exact type of value it returns at runtime, e.g. for very large numbers it
     can return text. *)
+
+val opt : (int -> row -> 'a) -> int -> row -> 'a option
+(** [opt dec col row] is the optional value [NULL] turns to [None] at column
+    [col] of the result [row]. *)
 
 val only : 'a Seq.t -> 'a
 (** [only seq] is the first and only element of [seq]. This is a convenience

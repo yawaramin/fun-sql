@@ -19,42 +19,35 @@ ocaml_sql_query. If not, see <https://www.gnu.org/licenses/>.
 ### Examples
 
 ```ocaml
-open Sqlite3
 open Sql
 
 (* Test DB *)
-let db = db_open ":memory:"
+let db = Sqlite3.db_open ":memory:"
 (* val db : Sqlite3.db = <abstr> *)
 
 (* DDL query with no arguments and no return *)
-let _ = query
-  db
-  "create table people (name text not null, age int not null)"
-  ret_unit
+query db "create table people (name text not null, age int not null)" unit
 
 (* Insert query with single row *)
-let _ = query
-  db
-  "insert into people (name, age) values (?, ?)"
-  (text "A")
-  (int 1)
-  ret_unit
+query db "insert into people (name, age) values (?, ?)" (text "A") (int 1) unit
 
-(* Get text value from DB *)
-let name_1 = query db "select name from people where rowid = ?" (int 1) ret_text
-(* val name_1 : string Seq.t = <fun> *)
+(* Get single column of results from DB *)
+let names = query
+  db
+  "select name from people where rowid = ?"
+  (int 1)
+  @@ ret @@ text' 0
+(* val names : string Seq.t = <fun> *)
 
 (* Map return data to a custom type on the fly *)
 type person = { name : string; age : int }
-
-let ret_person = ret @@ function
-  | [|Data.TEXT name; INT age|] -> Ok { name; age = Int64.to_int age }
-  | _ -> Error "malformed data"
-(* val ret_person : (person Seq.t, int) Sql.t = <abstr> *)
+let person row = { name = text' 0 row; age = int' 1 row }
+(* val person : row -> person *)
 
 (* Assert resultset has a single row and map it *)
 let person_1 = only
-  @@ query db "select name, age from people where rowid = ?" (int 1) ret_person
+  @@ query db "select name, age from people where rowid = ?" (int 1)
+  @@ ret person
 (* val person_1 : person = {name = "A"; age = 1} *)
 ```
 
