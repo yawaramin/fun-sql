@@ -15,66 +15,57 @@
    You should have received a copy of the GNU General Public License along with
    ocaml_sql_query. If not, see <https://www.gnu.org/licenses/>. *)
 
-open Sqlite3
-
-type ('a, 's) t
-(** A query component that can be composed with query parameters and return
-    types. *)
-
-type 'a query = ('a, int) t -> 'a
-
-type 'a param = ('a query, int) t
-(** A query parameter. The function with [int]s represents that the parameter is
-    positionally bound, and the position index incremented when that happens.
-    The user doesn't need to manually track the numbers and positions of
-    bindings, they just need to provide the corresponding binding values for any
-    positional variables in the SQL query, represented by [?]. *)
+type db = Sqlite3.db
+type data = Sqlite3.Data.t
+type 'a ret
 
 (** {2 Query runners} *)
 
-val query : db -> string -> 'a query
-(** [query db sql ...] executes a query [sql] against the database [db]. The
-    arguments to be bound to the query, if any, are passed in following [sql].
-    The return type of the query is then passed in as the final argument. *)
+val query : db -> string -> ?data:data list -> 'r ret -> 'r
+(** [query db sql ?data ret] executes a query [sql] against the database [db].
+    The arguments to be bound to the query, if any, are passed in [data]. The
+    return value of the query, if any, is decoded by [ret]. *)
 
-val batch_insert :
-  db ->
-  string ->
-  'a list ->
-  ('b query -> 'a -> 'b query) ->
-  'b query
-(** [batch_insert db sql objs args] inserts into the database [db], running
-    the query [sql], the row tuples obtained by encoding the list of [objs]
-    using the [args] parameters and return type encodings.
+val batch_insert : db -> string -> 'a list -> ('a -> data list) -> 'r ret -> 'r
+(** [batch_insert db sql objs obj_data ret] inserts into the database [db],
+    running the query [sql], the row tuples obtained by encoding the list of
+    [objs] using the [obj_data] function.
 
-    The return type of the query is passed in as [ret_type]. If the query
-    doesn't return anything, i.e. it doesn't have a [returning] clause,
-    [ret_unit] should be passed in. *)
+    The return type of the query is decoded by [ret]. *)
 
-(** {2 Query binding arguments} *)
+(** {2 Query binding arguments}
 
-val text : string -> _ param
-val bool : bool -> _ param
-val int : int -> _ param
-val nativeint : nativeint -> _ param
-val int32 : int32 -> _ param
-val int64 : int64 -> _ param
-val double : float -> _ param
-val blob : string -> _ param
+    These encode OCaml data as data to be bound to the query statement. *)
+
+val text : string -> data
+val bool : bool -> data
+val int : int -> data
+val nativeint : nativeint -> data
+val int32 : int32 -> data
+val int64 : int64 -> data
+val float : float -> data
+val blob : string -> data
+
+val opt : ('a -> data) -> 'a option -> data
+(** [opt data value] is the optional [value] encoded as query data. *)
 
 (** {2 Query return types} *)
 
-val unit : (unit, _) t
+type row = data array
+
+val unit : unit ret
 (** [unit] indicates that the query doesn't return any meaningful output. *)
 
-type row = Data.t array
-
-val ret : (row -> 'a) -> ('a Seq.t, _) t
+val ret : (row -> 'a) -> 'a Seq.t ret
 (** [ret decode] is a custom return type encoding for a resultset into a
     sequence of values of the type decoded by [decode].
 
     [decode] constructs a value of the custom type if possible, else raises
     [Failure].
+
+    Note that the sequence rows of the resultset is unfolded as it is read from
+    the database. It can only be traversed {i once,} with e.g. [List.of_seq] or
+    [Seq.iter]. If traversed multiple times, it will raise [Failure].
 
     @raise Invalid_argument if any row cannot be decoded.
     @raise Failure if an unexpected result code is encountered. *)
@@ -90,7 +81,7 @@ val text' : int -> row -> string
     exact type of value it returns at runtime, e.g. for very large numbers it
     can return text. *)
 
-val opt : (int -> row -> 'a) -> int -> row -> 'a option
+val opt' : (int -> row -> 'a) -> int -> row -> 'a option
 (** [opt dec col row] is the optional value [NULL] turns to [None] at column
     [col] of the result [row]. *)
 
