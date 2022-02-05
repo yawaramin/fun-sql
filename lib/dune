@@ -1,3 +1,4 @@
 (library
  (name sql)
+ (public_name sql_query)
  (libraries sqlite3 str))

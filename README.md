@@ -32,33 +32,34 @@ let () = query db "create table people (name text not null, age int)" unit
 let () = query
   db
   "insert into people (name, age) values (?, ?)"
-  ~data:[text "A"; int 1]
+  ~args:Arg.[text "A"; int 1]
   unit
 
 (* Get single column of results from DB *)
 let names = query
   db
   "select name from people where rowid = ?"
-  ~data:[int 1]
-  @@ ret @@ text' 0
+  ~args:Arg.[int 1]
+  @@ ret @@ text 0
 (* val names : string Seq.t = <fun> *)
 
-let () = query db "insert into people (name) values (?)" ~data:[text "B"] unit
+let () =
+  query db "insert into people (name) values (?)" ~args:Arg.[text "B"] unit
 
 (* Get optional values *)
 let ages = List.of_seq
-  @@ query db "select age from people" @@ ret @@ opt' int' 0
+  @@ query db "select age from people" @@ ret @@ opt int 0
 (* val ages : int option list = [Some 1; None] *)
 
 (* Map return data to a custom type on the fly *)
 type person = { name : string; age : int option }
 
-let person row = { name = text' 0 row; age = opt' int' 1 row }
+let person row = { name = text 0 row; age = opt int 1 row }
 (* val person : row -> person *)
 
 (* Assert resultset has a single row and map it *)
 let person_1 = only
-  @@ query db "select name, age from people where rowid = ?" ~data:[int 1]
+  @@ query db "select name, age from people where rowid = ?" ~args:Arg.[int 1]
   @@ ret person
 (* val person_1 : person = {name = "A"; age = Some 1} *)
 
@@ -70,6 +71,6 @@ let () = batch_insert
   db
   "insert into people (name, age) values (?, ?)"
   ppl
-  (fun { name; age } -> [text name; opt int age])
+  (fun { name; age } -> Arg.[text name; opt int age])
   unit
 ```

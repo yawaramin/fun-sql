@@ -16,8 +16,8 @@
    ocaml_sql_query. If not, see <https://www.gnu.org/licenses/>. *)
 
 type db = Sqlite3.db
-type data = Sqlite3.Data.t
-type row = data array
+type arg = Sqlite3.Data.t
+type row = Sqlite3.Data.t array
 type 'r ret = Unit : unit ret | Ret : (row -> 'r) -> 'r Seq.t ret
 
 open Sqlite3
@@ -27,11 +27,11 @@ let check_rc = function
   | DONE -> ()
   | rc -> failwith (Rc.to_string rc)
 
-let query : type r. db -> string -> ?data:data list -> r ret -> r =
+let query : type r. db -> string -> ?args:arg list -> r ret -> r =
   fun db sql ->
   let stmt = prepare db sql in
-  fun ?data ->
-  Option.iter (fun data -> check_rc @@ bind_values stmt data) data;
+  fun ?args ->
+  Option.iter (fun arg -> check_rc @@ bind_values stmt arg) args;
   function
   | Unit ->
     check_rc @@ step stmt;
@@ -41,48 +41,49 @@ let query : type r. db -> string -> ?data:data list -> r ret -> r =
       | ROW ->
         Some (stmt |> row_data |> decode, ())
       | DONE ->
+        check_rc @@ reset stmt;
         None
       | rc ->
         failwith ("Sql.rows: invalid operation: " ^ Rc.to_string rc)
     in
-    let seq = Seq.unfold rows () in
-    check_rc @@ reset stmt;
-    seq
+    Seq.unfold rows ()
 
-let text value = Data.TEXT value
-let bool value = Data.INT (if value then 1L else 0L)
-let int value = Data.INT (Int64.of_int value)
-let nativeint value = Data.INT (Int64.of_nativeint value)
-let int32 value = Data.INT (Int64.of_int32 value)
-let int64 value = Data.INT value
-let float value = Data.FLOAT value
-let blob value = Data.TEXT value
+module Arg = struct
+  let text value = Data.TEXT value
+  let bool value = Data.INT (if value then 1L else 0L)
+  let int value = Data.INT (Int64.of_int value)
+  let nativeint value = Data.INT (Int64.of_nativeint value)
+  let int32 value = Data.INT (Int64.of_int32 value)
+  let int64 value = Data.INT value
+  let float value = Data.FLOAT value
+  let blob value = Data.TEXT value
 
-let opt data = function
-  | Some value -> data value
-  | None -> Data.NULL
+  let opt data = function
+    | Some value -> data value
+    | None -> Data.NULL
+end
 
 let unit = Unit
 let ret decode = Ret decode
 
-let int64' pos row = match row.(pos) with
+let int64 pos row = match row.(pos) with
   | Data.INT value -> value
   | _ -> failwith "Expected int"
 
-let int' pos row = Int64.to_int @@ int64' pos row
+let int pos row = Int64.to_int @@ int64 pos row
 
-let float' pos row = match row.(pos) with
+let float pos row = match row.(pos) with
   | Data.FLOAT value -> value
   | _ -> failwith "Expected float"
 
-let text' pos row = match row.(pos) with
+let text pos row = match row.(pos) with
   | Data.INT value -> Int64.to_string value
   | FLOAT value -> string_of_float value
   | BLOB value
   | TEXT value -> value
   | _ -> failwith "Expected text"
 
-let opt' dec col row = match row.(col) with
+let opt dec col row = match row.(col) with
   | Data.NULL -> None
   | _ -> Some (dec col row)
 
@@ -111,7 +112,7 @@ let pre_pos = 1
 let tuple_pos = 2
 let post_pos = 3
 
-let batch_insert db sql objs obj_data =
+let batch_insert db sql objs obj_args =
   let sql = sql
     |> String.trim
     |> Str.global_replace wsp_r " "
@@ -123,6 +124,6 @@ let batch_insert db sql objs obj_data =
     let sql =
       Str.matched_group pre_pos sql ^ tuples ^ Str.matched_group post_pos sql
     in
-    query db sql ~data:(objs |> List.map obj_data |> List.flatten)
+    query db sql ~args:(objs |> List.map obj_args |> List.flatten)
   else
     failwith ("insert: expected valid statement, got '" ^ sql ^ "'")
