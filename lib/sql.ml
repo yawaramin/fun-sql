@@ -44,7 +44,7 @@ let query : type r. db -> string -> ?args:arg list -> r ret -> r =
         check_rc @@ reset stmt;
         None
       | rc ->
-        failwith ("Sql.rows: invalid operation: " ^ Rc.to_string rc)
+        failwith @@ Rc.to_string rc
     in
     Seq.unfold rows ()
 
@@ -126,4 +126,4 @@ let batch_insert db sql objs obj_args =
     in
     query db sql ~args:(objs |> List.map obj_args |> List.flatten)
   else
-    failwith ("insert: expected valid statement, got '" ^ sql ^ "'")
+    failwith sql
