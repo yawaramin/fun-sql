@@ -99,6 +99,14 @@ let only seq = match seq () with
     | Nil -> a
     | Cons (_, _) -> only_fail true
 
+let optional seq = match seq () with
+  | Seq.Nil ->
+    None
+  | Cons (a, seq) ->
+    match seq () with
+    | Nil -> Some a
+    | Cons (_, _) -> only_fail true
+
 (* We have to parse the value tuple of the insert statement to be able to
    multiply it a number of times if needed for a batch insert. *)
 

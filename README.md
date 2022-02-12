@@ -63,6 +63,12 @@ let person_1 = only
   @@ ret person
 (* val person_1 : person = {name = "A"; age = Some 1} *)
 
+(* Assert resultset has either 0 or 1 element *)
+let opt_person_1 = optional
+  @@ query db "select name, age from people where rowid = ?" ~args:Arg.[int 2]
+  @@ ret person
+(* val opt_person_1 : person option = None *)
+
 (* Batch insert *)
 
 let ppl = [{ name = "B"; age = None }; { name = "C"; age = Some 3 }]

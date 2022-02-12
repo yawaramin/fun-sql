@@ -97,6 +97,8 @@ val opt : (int -> row -> 'a) -> int -> row -> 'a option
 (** [opt dec col row] is the optional value [NULL] turns to [None] at column
     [col] of the result [row]. *)
 
+(** {3 Helpers to deal with resultset sequences} *)
+
 val only : 'a Seq.t -> 'a
 (** [only seq] is the first and only element of [seq]. This is a convenience
     function because all queries return seqs but sometimes we want only a single
@@ -105,4 +107,10 @@ val only : 'a Seq.t -> 'a
     Use this in preference to calculating the length of the [seq], which would
     force the entire data structure.
 
-    @raise Failure if seq has 0 or >1 items. *)
+    @raise Failure if [seq] has 0 or >1 items. *)
+
+val optional : 'a Seq.t -> 'a option
+(** [optional seq] is [Some a] if [a] is the first and only element of [seq], or
+    [None] if [seq] is empty.
+
+    @raise Failure if [seq] has >1 items *)
