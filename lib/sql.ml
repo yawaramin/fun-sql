@@ -107,6 +107,16 @@ let optional seq = match seq () with
     | Nil -> Some a
     | Cons (_, _) -> only_fail true
 
+let transaction db f =
+  query db "begin" unit;
+  match f () with
+  | r ->
+    query db "commit" unit;
+    r
+  | exception e ->
+    query db "rollback" unit;
+    raise e
+
 (* We have to parse the value tuple of the insert statement to be able to
    multiply it a number of times if needed for a batch insert. *)
 

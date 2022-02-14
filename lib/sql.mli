@@ -43,6 +43,12 @@ val batch_insert : db -> string -> 'a list -> ('a -> arg list) -> 'r ret -> 'r
 
     The return type of the query is decoded by [ret]. *)
 
+val transaction : db -> (unit -> 'r) -> 'r
+(** [transaction db f] runs [f ()] inside a transaction in the [db]. If the
+    operation succeeds, it commits the transaction and returns its result. If it
+    fails with an exception, it rolls back the transaction and re-raises the
+    exception. *)
+
 (** {2 Binding arguments}
 
     These encode OCaml data as data to be bound to the query statement. *)
