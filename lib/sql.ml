@@ -31,6 +31,7 @@ let query : type r. db -> string -> ?args:arg list -> r ret -> r =
   fun db sql ->
   let stmt = prepare db sql in
   fun ?args ->
+  ignore @@ reset stmt;
   Option.iter (fun arg -> check_rc @@ bind_values stmt arg) args;
   function
   | Unit ->
@@ -41,7 +42,6 @@ let query : type r. db -> string -> ?args:arg list -> r ret -> r =
       | ROW ->
         Some (stmt |> row_data |> decode, ())
       | DONE ->
-        check_rc @@ reset stmt;
         None
       | rc ->
         failwith @@ Rc.to_string rc
