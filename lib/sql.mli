@@ -43,6 +43,13 @@ val batch_insert : db -> string -> 'a list -> ('a -> arg list) -> 'r ret -> 'r
 
     The return type of the query is decoded by [ret]. *)
 
+val exec_script : db -> string -> unit
+(** [exec_script db sql] executes the [sql] script (possibly made up of multiple
+    statements) in the database [db]. Note that it ignores any rows returned by
+    any of the statements.
+
+    The script {i must not} have a trailing comma. *)
+
 val transaction : db -> (unit -> 'r) -> 'r
 (** [transaction db f] runs [f ()] inside a transaction in the [db]. If the
     operation succeeds, it commits the transaction and returns its result. If it

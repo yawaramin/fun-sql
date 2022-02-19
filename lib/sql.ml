@@ -48,6 +48,17 @@ let query : type r. db -> string -> ?args:arg list -> r ret -> r =
     in
     Seq.unfold rows ()
 
+let rec exec_script db stmt = match Sqlite3.step stmt with
+  | Sqlite3.Rc.DONE | ROW ->
+    begin match Sqlite3.prepare_tail stmt with
+    | Some stmt -> exec_script db stmt
+    | None -> ()
+    end
+  | _ ->
+    invalid_arg "stmt"
+
+let exec_script db sql = exec_script db @@ Sqlite3.prepare db sql
+
 module Arg = struct
   let text value = Data.TEXT value
   let bool value = Data.INT (if value then 1L else 0L)
