@@ -48,7 +48,7 @@ val exec_script : db -> string -> unit
     statements) in the database [db]. Note that it ignores any rows returned by
     any of the statements.
 
-    The script {i must not} have a trailing comma. *)
+    The script {i must not} have a trailing semicolon. *)
 
 val transaction : db -> (unit -> 'r) -> 'r
 (** [transaction db f] runs [f ()] inside a transaction in the [db]. If the
