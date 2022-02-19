@@ -48,16 +48,23 @@ let query : type r. db -> string -> ?args:arg list -> r ret -> r =
     in
     Seq.unfold rows ()
 
-let rec exec_script db stmt = match Sqlite3.step stmt with
-  | Sqlite3.Rc.DONE | ROW ->
-    begin match Sqlite3.prepare_tail stmt with
-    | Some stmt -> exec_script db stmt
+let rec exec_script db attempts stmt = match step stmt, attempts with
+  | Rc.BUSY, 0 ->
+    failwith "busy"
+  | BUSY, _ ->
+    exec_script db (pred attempts) stmt
+  | ROW, _ ->
+    exec_script db attempts stmt
+  | (DONE | OK), _ ->
+    check_rc @@ finalize stmt;
+    begin match prepare_tail stmt with
+    | Some stmt -> exec_script db attempts stmt
     | None -> ()
     end
-  | _ ->
-    invalid_arg "stmt"
+  | rc, _ ->
+    invalid_arg @@ Rc.to_string rc
 
-let exec_script db sql = exec_script db @@ Sqlite3.prepare db sql
+let exec_script db sql = exec_script db 3 @@ prepare db sql
 
 module Arg = struct
   let text value = Data.TEXT value
