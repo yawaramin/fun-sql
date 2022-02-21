@@ -50,6 +50,22 @@ val exec_script : db -> string -> unit
 
     The script {i must not} have a trailing semicolon. *)
 
+val migrate : db -> string -> unit
+(** [migrate db dir] applies the SQL migration scripts in [dir] on the given
+    database [db], keeping track of those that have already been applied.
+
+    To apply the migrations in the correct order, the migration scripts must be
+    given filenames that are sorted in lexicographical order of the desired
+    migration order, e.g. [0000_0001_init.sql] will be applied before
+    [0000_0002_sec.sql], and so on.
+
+    Note that this uses [exec_script] internally, which means the migration
+    scripts {i must not} have trailing semicolons either.
+
+    Any files with extensions other than [.sql] are ignored.
+
+    @raise Failure an error occurs during applying the migrations. *)
+
 val transaction : db -> (unit -> 'r) -> 'r
 (** [transaction db f] runs [f ()] inside a transaction in the [db]. If the
     operation succeeds, it commits the transaction and returns its result. If it

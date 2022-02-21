@@ -163,3 +163,43 @@ let batch_insert db sql objs obj_args =
     query db sql ~args:(objs |> List.map obj_args |> List.flatten)
   else
     failwith sql
+
+let slurp file =
+  let inc = open_in file in
+  let contents = really_input_string inc (in_channel_length inc) in
+  close_in inc;
+  contents
+
+let migrate db dir =
+  query
+    db
+    "
+    create table if not exists migration (
+      filename varchar(1024) not null primary key,
+      script text not null,
+      error text,
+      applied_at timestamp
+    )
+    "
+    unit;
+  let insert = query db "insert into migration (filename, script) values (?, ?)" in
+  let mark_applied = query
+    db
+    "update migration set applied_at = current_timestamp where filename = ?"
+  in
+  let mark_error = query db "update migration set error = ? where filename = ?" in
+  dir |> Sys.readdir |> Array.iter @@ fun filename ->
+    let filename = dir ^ "/" ^ filename in
+    if String.ends_with ~suffix:".sql" filename then
+      let script = slurp filename in
+      let arg_filename = Arg.text filename in
+      try begin
+        insert ~args:Arg.[arg_filename; text script] unit;
+        try transaction db @@ fun () ->
+          exec_script db script;
+          mark_applied ~args:[arg_filename] unit
+        with (Failure msg) as exn ->
+          mark_error ~args:Arg.[text msg; arg_filename] unit;
+          raise exn
+      end with Failure _ ->
+        ()
