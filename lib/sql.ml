@@ -190,7 +190,9 @@ let migrate db dir =
     "update migration set applied_at = current_timestamp where filename = ?"
   in
   let mark_error = query db "update migration set error = ? where filename = ?" in
-  dir |> Sys.readdir |> Array.iter @@ fun filename ->
+  let files = Sys.readdir dir in
+  Array.sort compare files;
+  files |> Array.iter @@ fun filename ->
     let filename = dir ^ "/" ^ filename in
     if String.ends_with ~suffix:".sql" filename then
       let script = slurp filename in
