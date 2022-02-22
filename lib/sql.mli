@@ -114,6 +114,7 @@ val ret : (row -> 'a) -> 'a Seq.t ret
 (** {3 Helpers to get typed values from columns} *)
 
 val int : int -> row -> int
+val bool : int -> row -> bool
 val int64 : int -> row -> int64
 val float : int -> row -> float
 

@@ -90,6 +90,8 @@ let int64 pos row = match row.(pos) with
 
 let int pos row = Int64.to_int @@ int64 pos row
 
+let bool pos row = Int64.compare (int64 pos row) Int64.zero > 0
+
 let float pos row = match row.(pos) with
   | Data.FLOAT value -> value
   | _ -> failwith "Expected float"
