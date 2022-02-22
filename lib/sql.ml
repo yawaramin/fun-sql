@@ -172,6 +172,8 @@ let slurp file =
   close_in inc;
   contents
 
+exception Bad_migration of string
+
 let migrate db dir =
   query
     db
@@ -202,8 +204,8 @@ let migrate db dir =
         try transaction db @@ fun () ->
           exec_script db script;
           mark_applied ~args:[arg_filename] unit
-        with (Failure msg) as exn ->
+        with Failure msg ->
           mark_error ~args:Arg.[text msg; arg_filename] unit;
-          raise exn
+          raise (Bad_migration msg)
       end with Failure _ ->
         ()

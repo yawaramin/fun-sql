@@ -50,6 +50,8 @@ val exec_script : db -> string -> unit
 
     The script {i must not} have a trailing semicolon. *)
 
+exception Bad_migration of string
+
 val migrate : db -> string -> unit
 (** [migrate db dir] applies the SQL migration scripts in [dir] on the given
     database [db], keeping track of those that have already been applied.
@@ -64,7 +66,7 @@ val migrate : db -> string -> unit
 
     Any files with extensions other than [.sql] are ignored.
 
-    @raise Failure an error occurs during applying the migrations. *)
+    @raise Bad_migration an error occurs during applying the migrations. *)
 
 val transaction : db -> (unit -> 'r) -> 'r
 (** [transaction db f] runs [f ()] inside a transaction in the [db]. If the
