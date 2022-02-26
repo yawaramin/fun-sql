@@ -175,37 +175,39 @@ let slurp file =
 exception Bad_migration of string
 
 let migrate db dir =
-  query
-    db
+  query db
     "
     create table if not exists migration (
       filename varchar(1024) not null primary key,
       script text not null,
-      error text,
       applied_at timestamp
     )
     "
     unit;
-  let insert = query db "insert into migration (filename, script) values (?, ?)" in
-  let mark_applied = query
-    db
-    "update migration set applied_at = current_timestamp where filename = ?"
+  let mark_ok = query db
+    "
+    insert into migration (filename, script, applied_at)
+    values (?, ?, current_timestamp)
+    "
   in
-  let mark_error = query db "update migration set error = ? where filename = ?" in
+  let migrated = query db "select 1 from migration where filename = ?" in
+  let migrated filename = 0
+    |> bool
+    |> ret
+    |> migrated ~args:[filename]
+    |> optional
+    |> Option.fold ~none:false ~some:Fun.id
+  in
   let files = Sys.readdir dir in
   Array.sort compare files;
+  transaction db @@ fun () ->
   files |> Array.iter @@ fun filename ->
     let filename = dir ^ "/" ^ filename in
-    if String.ends_with ~suffix:".sql" filename then
+    let arg_filename = Arg.text filename in
+    if String.ends_with ~suffix:".sql" filename && not (migrated arg_filename) then
       let script = slurp filename in
-      let arg_filename = Arg.text filename in
-      try begin
-        insert ~args:Arg.[arg_filename; text script] unit;
-        try transaction db @@ fun () ->
-          exec_script db script;
-          mark_applied ~args:[arg_filename] unit
-        with Failure msg ->
-          mark_error ~args:Arg.[text msg; arg_filename] unit;
-          raise (Bad_migration msg)
-      end with Failure _ ->
-        ()
+      match exec_script db script with
+      | () ->
+        mark_ok ~args:Arg.[arg_filename; text script] unit
+      | exception Failure _ ->
+        raise (Bad_migration (Sqlite3.errmsg db))
