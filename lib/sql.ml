@@ -19,6 +19,8 @@ type db = Sqlite3.db
 type arg = Sqlite3.Data.t
 type row = Sqlite3.Data.t array
 type 'r ret = Unit : unit ret | Ret : (row -> 'r) -> 'r Seq.t ret
+type 'a eval = ?args:arg list -> 'a Seq.t ret -> 'a Seq.t
+type exec = ?args:arg list -> unit ret -> unit
 
 open Sqlite3
 
@@ -202,12 +204,12 @@ let migrate db dir =
   Array.sort compare files;
   transaction db @@ fun () ->
   files |> Array.iter @@ fun filename ->
-    let filename = dir ^ "/" ^ filename in
-    let arg_filename = Arg.text filename in
-    if String.ends_with ~suffix:".sql" filename && not (migrated arg_filename) then
-      let script = slurp filename in
-      match exec_script db script with
-      | () ->
-        mark_ok ~args:Arg.[arg_filename; text script] unit
-      | exception Failure _ ->
-        raise (Bad_migration (Sqlite3.errmsg db))
+  let filename = dir ^ "/" ^ filename in
+  let arg_filename = Arg.text filename in
+  if String.ends_with ~suffix:".sql" filename && not (migrated arg_filename) then
+    let script = slurp filename in
+    match exec_script db script with
+    | () ->
+      mark_ok ~args:Arg.[arg_filename; text script] unit
+    | exception Failure _ ->
+      raise (Bad_migration (Sqlite3.errmsg db))

@@ -19,6 +19,11 @@ type db = Sqlite3.db
 type arg = Sqlite3.Data.t
 type _ ret
 
+(** {2 Convenience types for prepared statements} *)
+
+type 'a eval = ?args:arg list -> 'a Seq.t ret -> 'a Seq.t
+type exec = ?args:arg list -> unit ret -> unit
+
 (** {2 Query runners} *)
 
 val query : db -> string -> ?args:arg list -> 'r ret -> 'r
