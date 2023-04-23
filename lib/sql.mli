@@ -21,8 +21,12 @@ type _ ret
 
 (** {2 Convenience types for prepared statements} *)
 
-type 'a eval = ?args:arg list -> 'a Seq.t ret -> 'a Seq.t
-type exec = ?args:arg list -> unit ret -> unit
+type 'a dql = ?args:arg list -> 'a Seq.t ret -> 'a Seq.t
+(** Represents a Data Query Language query. Note, update statements can also
+    return results nowadays so technically this naming is slightly inaccurate. *)
+
+type dml = ?args:arg list -> unit ret -> unit
+(** Represents a Data Modification Language query. *)
 
 (** {2 Query runners} *)
 

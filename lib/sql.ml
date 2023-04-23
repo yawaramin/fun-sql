@@ -19,8 +19,8 @@ type db = Sqlite3.db
 type arg = Sqlite3.Data.t
 type row = Sqlite3.Data.t array
 type 'r ret = Unit : unit ret | Ret : (row -> 'r) -> 'r Seq.t ret
-type 'a eval = ?args:arg list -> 'a Seq.t ret -> 'a Seq.t
-type exec = ?args:arg list -> unit ret -> unit
+type 'a dql = ?args:arg list -> 'a Seq.t ret -> 'a Seq.t
+type dml = ?args:arg list -> unit ret -> unit
 
 open Sqlite3
 
@@ -189,7 +189,7 @@ let migrate db dir =
   let mark_ok = query db
     "
     insert into migration (filename, script, applied_at)
-    values (?, ?, current_timestamp)
+    values (:filename, :script, current_timestamp)
     "
   in
   let migrated = query db "select 1 from migration where filename = ?" in
