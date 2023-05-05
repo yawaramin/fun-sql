@@ -22,6 +22,8 @@ type 'r ret = Unit : unit ret | Ret : (row -> 'r) -> 'r Seq.t ret
 type 'a dql = ?args:arg list -> 'a Seq.t ret -> 'a Seq.t
 type dml = ?args:arg list -> unit ret -> unit
 
+exception More_than_one
+
 open Sqlite3
 
 let check_rc = function
@@ -109,17 +111,13 @@ let opt dec col row = match row.(col) with
   | Data.NULL -> None
   | _ -> Some (dec col row)
 
-let only_fail typ =
-  let msg = if typ then "more than one" else "none" in
-  failwith ("Seq.only: require exactly one item, found " ^ msg)
-
 let only seq = match seq () with
   | Seq.Nil ->
-    only_fail false
+    raise Not_found
   | Cons (a, seq) ->
     match seq () with
     | Nil -> a
-    | Cons (_, _) -> only_fail true
+    | Cons (_, _) -> raise More_than_one
 
 let optional seq = match seq () with
   | Seq.Nil ->
@@ -127,7 +125,7 @@ let optional seq = match seq () with
   | Cons (a, seq) ->
     match seq () with
     | Nil -> Some a
-    | Cons (_, _) -> only_fail true
+    | Cons (_, _) -> raise More_than_one
 
 let transaction db f =
   query db "begin" unit;
