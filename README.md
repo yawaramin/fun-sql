@@ -16,14 +16,30 @@ FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
 You should have received a copy of the GNU General Public License along with
 ocaml_sql_query. If not, see <https://www.gnu.org/licenses/>.
 
+### What is this
+
+A simple functional-style query runner and mapper for PostgreSQL and SQLite
+(MySQL support is also desired if anyone wants to contribute!).
+
+Designed to make it easy to create prepared statements and then use them:
+
+```ocaml
+(* Prepared statement: *)
+let edit_note = query db "update note set txt = $1 where id = $2"
+
+(* Use by simply calling it: *)
+let edit_note id txt = edit_note ~args:Arg.[int id; text txt] unit
+```
+
 ### Examples
 
 ```ocaml
-open Sql
+open Fun_postgresql
+(* Or: Fun_sqlite *)
 
 (* Test DB *)
-let db = Sqlite3.db_open ":memory:"
-(* val db : Sqlite3.db = <abstr> *)
+let db = new Postgresql.connection ~conninfo:"postgresql://..." ()
+(* Or: let db = Sqlite3.db_open ":memory:" *)
 
 (* DDL query with no arguments and no return *)
 let () = query db "create table people (name text not null, age int)" unit
@@ -31,20 +47,20 @@ let () = query db "create table people (name text not null, age int)" unit
 (* Insert query with single row *)
 let () = query
   db
-  "insert into people (name, age) values (:name, :age)"
+  "insert into people (name, age) values ($1, $2)" (* Or: (?, ?) *)
   ~args:Arg.[text "A"; int 1]
   unit
 
 (* Get single column of results from DB *)
 let names = query
   db
-  "select name from people where rowid = :id"
+  "select name from people where rowid = $1" (* Or: where age = $1 *)
   ~args:Arg.[int 1]
   @@ ret @@ text 0
 (* val names : string Seq.t = <fun> *)
 
-let () =
-  query db "insert into people (name) values (:name)" ~args:Arg.[text "B"] unit
+let () =                       (* Or: values (?) *)
+  query db "insert into people (name) values ($1)" ~args:Arg.[text "B"] unit
 
 (* Get optional values *)
 let ages = List.of_seq
@@ -58,14 +74,14 @@ let person row = { name = text 0 row; age = opt int 1 row }
 (* val person : row -> person *)
 
 (* Assert resultset has a single row and map it *)
-let person_1 = only
-  @@ query db "select name, age from people where rowid = :id" ~args:Arg.[int 1]
+let person_1 = only                              (* Or: ? *)
+  @@ query db "select name, age from people where age = $1" ~args:Arg.[int 1]
   @@ ret person
 (* val person_1 : person = {name = "A"; age = Some 1} *)
 
 (* Assert resultset has either 0 or 1 element *)
-let opt_person_1 = optional
-  @@ query db "select name, age from people where rowid = :id" ~args:Arg.[int 2]
+let opt_person_1 = optional                      (* Or: ? *)
+  @@ query db "select name, age from people where age = $1" ~args:Arg.[int 2]
   @@ ret person
 (* val opt_person_1 : person option = None *)
 
@@ -75,7 +91,7 @@ let ppl = [{ name = "B"; age = None }; { name = "C"; age = Some 3 }]
 
 let () = batch_insert
   db
-  "insert into people (name, age) values (:name, :age)"
+  "insert into people (name, age) values ($1, $2)" (* Or: (?, ?) *)
   ppl
   (fun { name; age } -> Arg.[text name; opt int age])
   unit

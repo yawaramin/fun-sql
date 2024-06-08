@@ -39,7 +39,7 @@ val query : db -> string -> ?args:arg list -> 'r ret -> 'r
     once, and run it each time with different parameters if needed. This may
     give you an efficiency boost over preparing the statement each time:
 
-    {[ let create_user = query db "insert into users (name, age) values (?, ?)"
+    {[ let create_user = query db "insert into users (name, age) values ($1, $2)"
        let create_user name age = create_user ~args:Arg.[text name; int age] unit ]} *)
 
 val batch_insert : db -> string -> 'a list -> ('a -> arg list) -> 'r ret -> 'r
