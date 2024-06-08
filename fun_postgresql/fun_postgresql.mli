@@ -15,8 +15,8 @@
    You should have received a copy of the GNU General Public License along with
    ocaml_sql_query. If not, see <https://www.gnu.org/licenses/>. *)
 
-type db = Sqlite3.db
-type arg = Sqlite3.Data.t
+type db = Postgresql.connection
+type arg
 type _ ret
 
 (** {2 Convenience types for prepared statements} *)
@@ -103,7 +103,7 @@ end
 
 (** {2 Return types} *)
 
-type row = Sqlite3.Data.t array
+type row = string array
 
 val unit : unit ret
 (** [unit] indicates that the query doesn't return any meaningful output. *)
@@ -130,9 +130,7 @@ val int64 : int -> row -> int64
 val float : int -> row -> float
 
 val text : int -> row -> string
-(** Also handles values of all other types. Use this when SQLite can change the
-    exact type of value it returns at runtime, e.g. for very large numbers it
-    can return text. *)
+(** Also handles values of all other types. *)
 
 val opt : (int -> row -> 'a) -> int -> row -> 'a option
 (** [opt dec col row] is the optional value [NULL] turns to [None] at column

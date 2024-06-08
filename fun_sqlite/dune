@@ -1,0 +1,4 @@
+(library
+ (name fun_sqlite)
+ (public_name fun_sqlite)
+ (libraries sqlite3 str))
