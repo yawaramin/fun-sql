@@ -34,6 +34,8 @@ let edit_note id txt = edit_note ~args:Arg.[int id; text txt] unit
 ### Examples
 
 ```ocaml
+let spr = Printf.sprintf
+
 open Fun_postgresql
 (* Or: Fun_sqlite *)
 
@@ -47,20 +49,24 @@ let () = query db "create table people (name text not null, age int)" unit
 (* Insert query with single row *)
 let () = query
   db
-  "insert into people (name, age) values ($1, $2)" (* Or: (?, ?) *)
+  (spr "insert into people (name, age) values (%s, %s)" (placeholder 0) (placeholder 1))
   ~args:Arg.[text "A"; int 1]
   unit
 
 (* Get single column of results from DB *)
 let names = query
   db
-  "select name from people where rowid = $1" (* Or: where age = $1 *)
+  (spr "select name from people where age = %s" (placeholder 0))
   ~args:Arg.[int 1]
   @@ ret @@ text 0
 (* val names : string Seq.t = <fun> *)
 
-let () =                       (* Or: values (?) *)
-  query db "insert into people (name) values ($1)" ~args:Arg.[text "B"] unit
+let () =
+  query
+    db
+    (spr "insert into people (name) values (%s)" (placeholder 0))
+    ~args:Arg.[text "B"]
+    unit
 
 (* Get optional values *)
 let ages = List.of_seq
@@ -74,14 +80,14 @@ let person row = { name = text 0 row; age = opt int 1 row }
 (* val person : row -> person *)
 
 (* Assert resultset has a single row and map it *)
-let person_1 = only                              (* Or: ? *)
-  @@ query db "select name, age from people where age = $1" ~args:Arg.[int 1]
+let person_1 = only
+  @@ query db (spr "select name, age from people where age = %s" (placeholder 0)) ~args:Arg.[int 1]
   @@ ret person
 (* val person_1 : person = {name = "A"; age = Some 1} *)
 
 (* Assert resultset has either 0 or 1 element *)
-let opt_person_1 = optional                      (* Or: ? *)
-  @@ query db "select name, age from people where age = $1" ~args:Arg.[int 2]
+let opt_person_1 = optional
+  @@ query db (spr "select name, age from people where age = %s" (placeholder 0)) ~args:Arg.[int 2]
   @@ ret person
 (* val opt_person_1 : person option = None *)
 
@@ -91,7 +97,7 @@ let ppl = [{ name = "B"; age = None }; { name = "C"; age = Some 3 }]
 
 let () = batch_insert
   db
-  "insert into people (name, age) values ($1, $2)" (* Or: (?, ?) *)
+  (spr "insert into people (name, age) values (%s, %s)" (placeholder 0) (placeholder 1))
   ppl
   (fun { name; age } -> Arg.[text name; opt int age])
   unit
