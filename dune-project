@@ -1,6 +1,6 @@
 (lang dune 2.7)
 
-(name fun_sql)
+(name fun-sql)
 
 (version v0.1.0)
 
@@ -16,7 +16,7 @@
  (github yawaramin/ocaml_sql_query))
 
 (package
- (name fun_sqlite)
+ (name fun-sqlite)
  (synopsis "TBD")
  (description "TBD")
  (documentation "TBD")
@@ -28,7 +28,7 @@
     (< 6.0.0)))))
 
 (package
- (name fun_postgresql)
+ (name fun-postgresql)
  (synopsis "TBD")
  (description "TBD")
  (documentation "TBD")
