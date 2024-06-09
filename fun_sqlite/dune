@@ -1,4 +1,4 @@
 (library
  (name fun_sqlite)
  (public_name fun-sqlite)
- (libraries sqlite3 str))
+ (libraries fun-sql sqlite3))

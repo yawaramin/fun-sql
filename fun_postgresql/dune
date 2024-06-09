@@ -1,4 +1,4 @@
 (library
  (name fun_postgresql)
  (public_name fun-postgresql)
- (libraries postgresql str))
+ (libraries fun-sql postgresql))

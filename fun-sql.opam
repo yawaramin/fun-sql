@@ -12,7 +12,6 @@ doc: "TBD"
 bug-reports: "https://github.com/yawaramin/ocaml_sql_query/issues"
 depends: [
   "dune" {>= "2.7"}
-  "sqlite3" {>= "5.1.0" & < "6.0.0"}
   "odoc" {with-doc}
 ]
 build: [

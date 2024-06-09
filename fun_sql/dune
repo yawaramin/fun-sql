@@ -1,0 +1,4 @@
+(library
+ (name fun_sql)
+ (public_name fun-sql)
+ (libraries str))

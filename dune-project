@@ -2,7 +2,7 @@
 
 (name fun-sql)
 
-(version v0.1.0)
+(version v0.2.0)
 
 (generate_opam_files true)
 
@@ -14,6 +14,13 @@
 
 (source
  (github yawaramin/ocaml_sql_query))
+
+(package
+ (name fun-sql)
+ (synopsis "TBD")
+ (description "TBD")
+ (documentation "TBD")
+ (tags (org:yawaramin)))
 
 (package
  (name fun-sqlite)
