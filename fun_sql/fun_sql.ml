@@ -12,7 +12,7 @@ module type Sql = sig
   type _ ret
   (** A decoder of a single row of the resultset from running a query. *)
 
-  val placeholder : int -> string
+  val placeholder : Format.formatter -> int -> unit
   (** A generic way to write placeholders for different database drivers'
       prepared statement parameters.
 
@@ -27,10 +27,7 @@ module type Sql = sig
       actual arguments (if any) and the resultset row decoder:
 
       {[let add_person =
-          query db (Printf.sprintf
-            "insert into people (name, age) values (%s, %s)"
-            (placeholder 0)
-            (placeholder 1))
+          query db (sql "insert into people (name, age) values (%a, %a)" placeholder 0 placeholder 1)
         let add_person name age = add_person ~args:Arg.[text name; int age] unit]}
 
       @raise Invalid_argument if trying to create multiple prepared statements
@@ -106,6 +103,9 @@ module type S = sig
   type arg
   type _ ret
 
+  val sql : ('a, Format.formatter, unit, string) format4 -> 'a
+  (** Helper to construct SQL query strings using [placeholder]s. *)
+
   exception Bad_migration of string
 
   val migrate : db -> string -> unit
@@ -160,6 +160,8 @@ struct
   type arg = Sql.arg
   type 'a ret = 'a Sql.ret
 
+  let sql = Format.asprintf
+
   exception More_than_one
 
   let only seq =
@@ -198,8 +200,6 @@ struct
 
   exception Bad_migration of string
 
-  let spr = Printf.sprintf
-
   let migrate db =
     exec_script db
       "create table if not exists migration (
@@ -209,14 +209,13 @@ struct
        )";
     let mark_ok =
       query db
-        (spr
+        (sql
            "insert into migration (filename, script, applied_at)
-         values (%s, %s, current_timestamp)"
-           (placeholder 0) (placeholder 1))
+            values (%a, %a, current_timestamp)"
+           placeholder 0 placeholder 1)
     in
     let migrated =
-      query db
-        (spr "select 1 from migration where filename = %s" (placeholder 0))
+      query db (sql "select 1 from migration where filename = %a" placeholder 0)
     in
     let migrated filename =
       0

@@ -49,14 +49,14 @@ let () = query db "create table people (name text not null, age int)" unit
 (* Insert query with single row *)
 let () = query
   db
-  (spr "insert into people (name, age) values (%s, %s)" (placeholder 0) (placeholder 1))
+  (sql "insert into people (name, age) values (%a, %a)" placeholder 0 placeholder 1)
   ~args:Arg.[text "A"; int 1]
   unit
 
 (* Get single column of results from DB *)
 let names = query
   db
-  (spr "select name from people where age = %s" (placeholder 0))
+  (sql "select name from people where age = %a" placeholder 0)
   ~args:Arg.[int 1]
   @@ ret @@ text 0
 (* val names : string Seq.t = <fun> *)
@@ -64,7 +64,7 @@ let names = query
 let () =
   query
     db
-    (spr "insert into people (name) values (%s)" (placeholder 0))
+    (sql "insert into people (name) values (%a)" placeholder 0)
     ~args:Arg.[text "B"]
     unit
 
@@ -81,13 +81,13 @@ let person row = { name = text 0 row; age = opt int 1 row }
 
 (* Assert resultset has a single row and map it *)
 let person_1 = only
-  @@ query db (spr "select name, age from people where age = %s" (placeholder 0)) ~args:Arg.[int 1]
+  @@ query db (sql "select name, age from people where age = %a" placeholder 0) ~args:Arg.[int 1]
   @@ ret person
 (* val person_1 : person = {name = "A"; age = Some 1} *)
 
 (* Assert resultset has either 0 or 1 element *)
 let opt_person_1 = optional
-  @@ query db (spr "select name, age from people where age = %s" (placeholder 0)) ~args:Arg.[int 2]
+  @@ query db (sql "select name, age from people where age = %a" placeholder 0) ~args:Arg.[int 2]
   @@ ret person
 (* val opt_person_1 : person option = None *)
 
@@ -97,7 +97,7 @@ let ppl = [{ name = "B"; age = None }; { name = "C"; age = Some 3 }]
 
 let () = batch_insert
   db
-  (spr "insert into people (name, age) values (%s, %s)" (placeholder 0) (placeholder 1))
+  (sql "insert into people (name, age) values (%a, %a)" placeholder 0 placeholder 1)
   ppl
   (fun { name; age } -> Arg.[text name; opt int age])
   unit

@@ -22,7 +22,7 @@ type 'r ret =
   | Unit : unit ret
   | Ret : (row -> 'r) -> 'r Seq.t ret
 
-let placeholder n = Printf.sprintf "$%d" (n + 1)
+let placeholder f n = Format.fprintf f "$%d" (n + 1)
 
 let query : type r. db -> string -> ?args:arg list -> r ret -> r =
  fun db sql ->

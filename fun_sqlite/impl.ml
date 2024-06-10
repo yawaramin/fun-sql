@@ -22,7 +22,7 @@ type 'r ret =
   | Unit : unit ret
   | Ret : (row -> 'r) -> 'r Seq.t ret
 
-let placeholder _ = "?"
+let placeholder f _ = Format.pp_print_char f '?'
 
 open Sqlite3
 
