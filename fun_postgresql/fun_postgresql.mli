@@ -14,7 +14,11 @@
    You should have received a copy of the GNU General Public License along with
    fun-sql. If not, see <https://www.gnu.org/licenses/>. *)
 
-(** Use this module for PostgreSQL database queries. *)
+(** Use this module for PostgreSQL database queries.
+
+    Note: does not support [batch_insert] out of the box because PostgreSQL uses
+    numbered placeholders, which makes it much more difficult to parse out and
+    modify the insert query with the correct number of placeholders. *)
 
 include Fun_sql.Sql with type db = Postgresql.connection
 
