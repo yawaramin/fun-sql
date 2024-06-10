@@ -3,10 +3,8 @@ DOCPATH=$(PWD)/_build/default/_doc/_html
 .PHONY : publish_doc
 publish_doc : odoc
 	@chmod 644 $(DOCPATH)/index.html &&\
-	cp index.html $(DOCPATH)/ &&\
 	git checkout gh-pages &&\
 	cp -R $(DOCPATH)/* . &&\
-	rm -rf dream_html &&\
 	git commit -a --amend -mdocs &&\
 	git push --force &&\
 	git checkout -
