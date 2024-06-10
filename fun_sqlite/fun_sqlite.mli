@@ -20,3 +20,13 @@ include Fun_sql.Sql with type db = Sqlite3.db
 
 include
   Fun_sql.S with type db := db and type arg := arg and type 'a ret := 'a ret
+
+val batch_insert : db -> string -> 'a list -> ('a -> arg list) -> 'r ret -> 'r
+(** [batch_insert db sql objs obj_args ret] inserts into the database [db],
+     running the query [sql], the row tuples obtained by encoding the list of
+     [objs] using the [obj_args] function.
+
+     This prepares a new statement each time because the [VALUES (...)] clause
+     may contain different numbers of placeholders in each call.
+
+     The return type of the query is decoded by [ret]. *)
