@@ -4,28 +4,39 @@
 
 module type Sql = sig
   type db
+  (** The database connection or file, etc. *)
+
   type arg
+  (** A value sent to the database in the place of a query parameter. *)
+
   type _ ret
+  (** A decoder of a single row of the resultset from running a query. *)
 
   val placeholder : int -> string
-  (** A generic way to distinguish between placeholders for different database
-      engines' prepared statement parameters.
+  (** A generic way to write placeholders for different database drivers'
+      prepared statement parameters.
 
-      Note: placeholders are 0-indexed. *)
+      ℹ️ Placeholders are 0-indexed. *)
 
   (** {2 Query runners} *)
 
   val query : db -> string -> ?args:arg list -> 'r ret -> 'r
-  (** [query db sql ?args ret] executes a query [sql] against the database [db].
-     The arguments to be bound to the query, if any, are passed in [args]. The
-     return value of the query, if any, is decoded by [ret].
+  (** The main function through which queries are run is the [query] function.
+      This function {e always} creates a prepared statement for each partial call
+      to [query db sql]. This prepared statement can then be called with the
+      actual arguments (if any) and the resultset row decoder:
 
-     Note, this function is designed so you can prepare each SQL statement only
-     once, and run it each time with different parameters if needed. This may
-     give you an efficiency boost over preparing the statement each time:
+      {[let add_person =
+          query db (Printf.sprintf
+            "insert into people (name, age) values (%s, %s)"
+            (placeholder 0)
+            (placeholder 1))
+        let add_person name age = add_person ~args:Arg.[text name; int age] unit]}
 
-     {[ let create_user = query db "insert into users (name, age) values (?, ?)"
-        let create_user name age = create_user ~args:Arg.[text name; int age] unit ]} *)
+      @raise Invalid_argument if trying to create multiple prepared statements
+        for the same SQL query in PostgreSQL. To avoid this, just create the
+        prepared statement {e once only} and call it whenever needed, as shown
+        above. *)
 
   val exec_script : db -> string -> unit
   (** [exec_script db sql] executes the [sql] script (possibly made up of multiple
