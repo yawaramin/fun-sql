@@ -1,4 +1,4 @@
-## ocaml_sql_query - functional-style SQL queries for OCaml
+## fun-sql - functional-style SQL queries for OCaml
 
 Copyright 2022 Yawar Amin
 

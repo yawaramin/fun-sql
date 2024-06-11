@@ -13,7 +13,7 @@
 (maintainers "Yawar Amin <yawar.amin@gmail.com>")
 
 (source
- (github yawaramin/ocaml_sql_query))
+ (github yawaramin/fun-sql))
 
 (package
  (name fun-sql)

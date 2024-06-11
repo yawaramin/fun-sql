@@ -7,9 +7,9 @@ maintainer: ["Yawar Amin <yawar.amin@gmail.com>"]
 authors: ["Yawar Amin <yawar.amin@gmail.com>"]
 license: "GPL-3.0"
 tags: ["org:yawaramin"]
-homepage: "https://github.com/yawaramin/ocaml_sql_query"
+homepage: "https://github.com/yawaramin/fun-sql"
 doc: "TBD"
-bug-reports: "https://github.com/yawaramin/ocaml_sql_query/issues"
+bug-reports: "https://github.com/yawaramin/fun-sql/issues"
 depends: [
   "dune" {>= "2.7"}
   "odoc" {with-doc}
@@ -28,4 +28,4 @@ build: [
     "@doc" {with-doc}
   ]
 ]
-dev-repo: "git+https://github.com/yawaramin/ocaml_sql_query.git"
+dev-repo: "git+https://github.com/yawaramin/fun-sql.git"
