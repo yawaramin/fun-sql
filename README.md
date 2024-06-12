@@ -34,8 +34,6 @@ let edit_note id txt = edit_note ~args:Arg.[int id; text txt] unit
 ### Examples
 
 ```ocaml
-let spr = Printf.sprintf
-
 open Fun_postgresql
 (* Or: Fun_sqlite *)
 
