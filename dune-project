@@ -6,7 +6,7 @@
 
 (generate_opam_files true)
 
-(license GPL-3.0)
+(license GPL-3.0-or-later)
 
 (authors "Yawar Amin <yawar.amin@gmail.com>")
 

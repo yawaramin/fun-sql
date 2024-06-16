@@ -5,7 +5,7 @@ synopsis: "PostgreSQL query support"
 description: "Use this package for running PostgreSQL queries."
 maintainer: ["Yawar Amin <yawar.amin@gmail.com>"]
 authors: ["Yawar Amin <yawar.amin@gmail.com>"]
-license: "GPL-3.0"
+license: "GPL-3.0-or-later"
 tags: ["org:yawaramin"]
 homepage: "https://github.com/yawaramin/fun-sql"
 doc: "https://yawaramin.github.io/fun-sql/fun-postgresql/Fun_postgresql/"
