@@ -2,7 +2,7 @@
 
 (name fun-sql)
 
-(version v0.2.2)
+(version v0.2.3)
 
 (generate_opam_files true)
 
