@@ -2,7 +2,7 @@
 
 (name fun-sql)
 
-(version v0.2.0)
+(version v0.2.1)
 
 (generate_opam_files true)
 
@@ -17,16 +17,17 @@
 
 (package
  (name fun-sql)
- (synopsis "TBD")
- (description "TBD")
- (documentation "TBD")
+ (synopsis "Shared code for SQL libraries")
+ (description
+  "Shared code for SQL packages, use fun-sqlite or fun-postgresql directly depending on which database you are using.")
+ (documentation "https://yawaramin.github.io/fun-sql/fun-sql/Fun_sql/")
  (tags (org:yawaramin)))
 
 (package
  (name fun-sqlite)
- (synopsis "TBD")
- (description "TBD")
- (documentation "TBD")
+ (synopsis "SQLite query support")
+ (description "Use this package for running SQLite queries.")
+ (documentation "https://yawaramin.github.io/fun-sql/fun-sqlite/Fun_sqlite/")
  (tags (org:yawaramin))
  (depends
   (sqlite3
@@ -36,9 +37,10 @@
 
 (package
  (name fun-postgresql)
- (synopsis "TBD")
- (description "TBD")
- (documentation "TBD")
+ (synopsis "PostgreSQL query support")
+ (description "Use this package for running PostgreSQL queries.")
+ (documentation
+  "https://yawaramin.github.io/fun-sql/fun-postgresql/Fun_postgresql/")
  (tags (org:yawaramin))
  (depends
   (postgresql
