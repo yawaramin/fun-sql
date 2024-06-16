@@ -13,7 +13,7 @@ doc: "https://yawaramin.github.io/fun-sql/fun-sql/Fun_sql/"
 bug-reports: "https://github.com/yawaramin/fun-sql/issues"
 depends: [
   "dune" {>= "2.7"}
-  "ocaml" {>= "4.13.0"}
+  "ocaml" {>= "4.14.0"}
   "odoc" {with-doc}
 ]
 build: [

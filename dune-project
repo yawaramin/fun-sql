@@ -24,7 +24,7 @@
  (tags (org:yawaramin))
  (depends
   (ocaml
-   (>= 4.13.0))))
+   (>= 4.14.0))))
 
 (package
  (name fun-sqlite)
