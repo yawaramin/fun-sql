@@ -2,7 +2,7 @@
 
 (name fun-sql)
 
-(version v0.2.1)
+(version v0.2.2)
 
 (generate_opam_files true)
 
@@ -21,7 +21,10 @@
  (description
   "Shared code for SQL packages, use fun-sqlite or fun-postgresql directly depending on which database you are using.")
  (documentation "https://yawaramin.github.io/fun-sql/fun-sql/Fun_sql/")
- (tags (org:yawaramin)))
+ (tags (org:yawaramin))
+ (depends
+  (ocaml
+   (>= 4.13.0))))
 
 (package
  (name fun-sqlite)
@@ -30,6 +33,8 @@
  (documentation "https://yawaramin.github.io/fun-sql/fun-sqlite/Fun_sqlite/")
  (tags (org:yawaramin))
  (depends
+  (fun-sql
+   (= :version))
   (sqlite3
    (and
     (>= 5.1.0)
@@ -43,6 +48,8 @@
   "https://yawaramin.github.io/fun-sql/fun-postgresql/Fun_postgresql/")
  (tags (org:yawaramin))
  (depends
+  (fun-sql
+   (= :version))
   (postgresql
    (and
     (>= 5.0.0)
