@@ -1,0 +1,4 @@
+(library
+ (name ppx_deriving_funsql)
+ (kind ppx_deriver)
+ (libraries ppxlib))

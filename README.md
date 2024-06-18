@@ -93,10 +93,46 @@ let opt_person_1 = optional
 
 let ppl = [{ name = "B"; age = None }; { name = "C"; age = Some 3 }]
 
+(* Batch insert works with SQLite only: *)
 let () = batch_insert
   db
   (sql "insert into people (name, age) values (%a, %a)" placeholder 0 placeholder 1)
   ppl
   (fun { name; age } -> Arg.[text name; opt int age])
   unit
+```
+
+### PPX
+
+There is basic support for deriving resultset row decoders:
+
+```
+# open Fun_sqlite;;
+# let db = Sqlite3.db_open "fun.db";;
+val db : db = <abstr>
+# module Person = struct
+  type t = { name : string; age : int option } [@@deriving funsql]
+end;;
+module Person :
+  sig type t = { name : string; age : int option; } val t : row -> t end
+# List.of_seq (query db "select name, age from people" (ret Person.t));;
+- : Person.t list =
+[{Person.name = "Tim"; age = Some 36}; {Person.name = "Bob"; age = Some 32};
+ {Person.name = "Foo"; age = Some 1}; {Person.name = "X"; age = Some 22};
+ {Person.name = "N"; age = Some 55}]
+```
+
+To use the PPX, add to your `dune` file:
+
+```
+(preprocess (pps ppx_deriving_funsql))
+```
+
+And to your `dune-project` file:
+
+```
+(depends
+  ...
+  ppx_deriving_funsql
+  ...)
 ```
