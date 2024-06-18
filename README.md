@@ -104,23 +104,12 @@ let () = batch_insert
 
 ### PPX
 
-There is basic support for deriving resultset row decoders:
+There is support for deriving resultset row decoders:
 
-```
-# open Fun_sqlite;;
-# let db = Sqlite3.db_open "fun.db";;
-val db : db = <abstr>
-# module Person = struct
-  type t = { name : string; age : int option } [@@deriving funsql]
-end;;
-module Person :
-  sig type t = { name : string; age : int option; } val t : row -> t end
-# List.of_seq (query db "select name, age from people" (ret Person.t));;
-- : Person.t list =
-[{Person.name = "Tim"; age = Some 36}; {Person.name = "Bob"; age = Some 32};
- {Person.name = "Foo"; age = Some 1}; {Person.name = "X"; age = Some 22};
- {Person.name = "N"; age = Some 55}]
-```
+> [!NOTE]
+> One of the query modules _must_ be `open`ed for the PPX to work, ie either
+> `Fun_sqlite` or `Fun_postgresql`. You can avoid polluting your scope by putting
+> the `open`s inside submodules.
 
 To use the PPX, add to your `dune` file:
 
@@ -135,4 +124,50 @@ And to your `dune-project` file:
   ...
   ppx_deriving_funsql
   ...)
+```
+
+### Deriving for custom types with the PPX
+
+The PPX supports the following basic types:
+
+- `int`
+- `string`
+- `float`
+- `int64`
+- `bool`
+- `some option` where `some` is a type which can be derived. This can be used to
+  represent a nullable type.
+
+It also supports custom types as long as the type is in a module which conforms
+to the signature:
+
+```ocaml
+sig
+  type t
+  val of_string : string -> t
+end
+```
+
+In other words it uses the module to 'find' the parser of the type from its
+string representation. Eg:
+
+```
+# #require "decimal";;
+# module Person = struct
+    open Fun_sqlite
+    type t = { name : string; age : Decimal.t option } [@@deriving funsql]
+end;;
+module Person :
+  sig
+    type t = { name : string; age : Decimal.t option; }
+    val ret : t Seq.t ret
+  end
+# let db = Sqlite3.db_open "fun.db";;
+val db : db = <abstr>
+# #install_printer Decimal.pp;;
+# List.of_seq (query db "select name, age from people" Person.ret);;
+- : Person.t list =
+[{Person.name = "Tim"; age = Some 36}; {Person.name = "Bob"; age = Some 32};
+ {Person.name = "Foo"; age = Some 1}; {Person.name = "X"; age = Some 22};
+ {Person.name = "N"; age = Some 55}]
 ```

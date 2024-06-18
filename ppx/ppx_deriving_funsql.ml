@@ -2,29 +2,37 @@ open Ppxlib
 module List = ListLabels
 open Ast_builder.Default
 
+let ret = "ret"
+let row = "row"
+
 let rec typ ~loc fname = function
   | { ptyp_desc =
         Ptyp_constr
           ( { txt = Lident (("int" | "bool" | "int64" | "float") as name); _ },
             [] );
       _
-    } -> pexp_ident ~loc { loc; txt = lident name }
+    } -> evar ~loc name
   | { ptyp_desc = Ptyp_constr ({ txt = Lident "string"; _ }, []); _ } ->
-    pexp_ident ~loc { loc; txt = lident "text" }
-  | { ptyp_desc = Ptyp_constr ({ txt = Ldot (Lident _, "t") as modident; _ }, []);
+    evar ~loc "text"
+  | { ptyp_desc =
+        Ptyp_constr ({ txt = Ldot ((Lident _ as modident), "t"); _ }, []);
       _
-    } -> pexp_ident ~loc { loc; txt = modident }
+    } ->
+    (* Eg: fun i row -> M.of_string (text i row) *)
+    eabstract ~loc
+      [pvar ~loc "i"; pvar ~loc row]
+      (eapply ~loc
+         (pexp_ident ~loc { loc; txt = Ldot (modident, "of_string") })
+         [eapply ~loc (evar ~loc "text") [evar ~loc "i"; evar ~loc row]])
   | { ptyp_desc = Ptyp_constr ({ txt = Lident "option"; _ }, [opt_type]); _ } ->
-    eapply ~loc
-      (pexp_ident ~loc { loc; txt = lident "opt" })
-      [typ ~loc fname opt_type]
+    (* Eg: opt text *)
+    eapply ~loc (evar ~loc "opt") [typ ~loc fname opt_type]
   | _ -> failwith ("Cannot derive type for field: " ^ fname)
-
-let row = "row"
 
 let field_impl i (ld : label_declaration) =
   let loc = ld.pld_loc in
   let fieldname = ld.pld_name.txt in
+  (* fieldname = typ i row *)
   ( { txt = Lident fieldname; loc },
     eapply ~loc (typ ~loc fieldname ld.pld_type) [eint ~loc i; evar ~loc row] )
 
@@ -41,15 +49,19 @@ let generate_impl ~ctxt (_rec_flag, type_declarations) =
             "Cannot derive accessors for non-record types"
         in
         [pstr_extension ~loc ext []]
-      | { ptype_name; ptype_kind = Ptype_record fields; _ } ->
+      | { ptype_kind = Ptype_record fields; _ } ->
+        (* let ret = ret (fun row -> { ... }) *)
         [ (try
              pstr_value ~loc Nonrecursive
-               [ value_binding ~loc ~pat:(ppat_var ~loc ptype_name)
+               [ value_binding ~loc
+                   ~pat:(ppat_var ~loc { loc; txt = ret })
                    ~expr:
-                     (eabstract ~loc
-                        [ppat_var ~loc { txt = row; loc }]
-                        (pexp_record ~loc (List.mapi fields ~f:field_impl) None))
-               ]
+                     (eapply ~loc (evar ~loc ret)
+                        [ eabstract ~loc
+                            [ppat_var ~loc { txt = row; loc }]
+                            (pexp_record ~loc
+                               (List.mapi fields ~f:field_impl)
+                               None) ]) ]
            with Failure msg ->
              pstr_extension ~loc (Location.error_extensionf ~loc "%s" msg) [])
         ])
