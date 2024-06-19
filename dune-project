@@ -2,7 +2,7 @@
 
 (name fun-sql)
 
-(version v0.2.3)
+(version v0.3.0)
 
 (generate_opam_files true)
 
@@ -20,8 +20,9 @@
  (synopsis "Shared code for SQL libraries")
  (description
   "Shared code for SQL packages, use fun-sqlite or fun-postgresql directly depending on which database you are using.")
- (documentation "https://yawaramin.github.io/fun-sql/fun-sql/Fun_sql/")
- (tags (org:yawaramin))
+ (documentation https://yawaramin.github.io/fun-sql/fun-sql/Fun_sql/)
+ (tags
+  (org:yawaramin fun-sql))
  (depends
   (ocaml
    (>= 4.14.0))))
@@ -30,8 +31,9 @@
  (name fun-sqlite)
  (synopsis "SQLite query support")
  (description "Use this package for running SQLite queries.")
- (documentation "https://yawaramin.github.io/fun-sql/fun-sqlite/Fun_sqlite/")
- (tags (org:yawaramin))
+ (documentation https://yawaramin.github.io/fun-sql/fun-sqlite/Fun_sqlite/)
+ (tags
+  (org:yawaramin fun-sql))
  (depends
   (fun-sql
    (= :version))
@@ -45,8 +47,9 @@
  (synopsis "PostgreSQL query support")
  (description "Use this package for running PostgreSQL queries.")
  (documentation
-  "https://yawaramin.github.io/fun-sql/fun-postgresql/Fun_postgresql/")
- (tags (org:yawaramin))
+  https://yawaramin.github.io/fun-sql/fun-postgresql/Fun_postgresql/)
+ (tags
+  (org:yawaramin fun-sql))
  (depends
   (fun-sql
    (= :version))
@@ -54,3 +57,17 @@
    (and
     (>= 5.0.0)
     (< 6.0.0)))))
+
+(package
+ (name ppx_deriving_funsql)
+ (synopsis "PPX deriver for query row decoding into OCaml types")
+ (description
+  "This is a convenience PPX that takes care of the boilerplate of writing the conversion from query result rows to OCaml types.")
+ (documentation https://yawaramin.github.io/fun-sql/)
+ (tags
+  (org:yawaramin fun-sql))
+ (depends
+  (ppxlib
+   (and
+    (>= 0.32.1)
+    (< 1.0.0)))))

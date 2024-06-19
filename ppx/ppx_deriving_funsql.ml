@@ -11,11 +11,15 @@ let rec typ ~loc fname = function
           ( { txt = Lident (("int" | "bool" | "int64" | "float") as name); _ },
             [] );
       _
-    } -> evar ~loc name
+    } ->
+    (* The ret decoder function has the same name as the type *)
+    evar ~loc name
   | { ptyp_desc = Ptyp_constr ({ txt = Lident "string"; _ }, []); _ } ->
+    (* The string decoder is called 'text' *)
     evar ~loc "text"
   | { ptyp_desc =
-        Ptyp_constr ({ txt = Ldot ((Lident _ as modident), "t"); _ }, []);
+        (* The type is like M.t or _ M.t or (_, _) M.t and so on *)
+        Ptyp_constr ({ txt = Ldot ((Lident _ as modident), "t"); _ }, _);
       _
     } ->
     (* Eg: fun i row -> M.of_string (text i row) *)
@@ -25,11 +29,11 @@ let rec typ ~loc fname = function
          (pexp_ident ~loc { loc; txt = Ldot (modident, "of_string") })
          [eapply ~loc (evar ~loc "text") [evar ~loc "i"; evar ~loc row]])
   | { ptyp_desc = Ptyp_constr ({ txt = Lident "option"; _ }, [opt_type]); _ } ->
-    (* Eg: opt text *)
+    (* Eg: type is string option, decoder func is 'opt text' *)
     eapply ~loc (evar ~loc "opt") [typ ~loc fname opt_type]
   | _ -> failwith ("Cannot derive type for field: " ^ fname)
 
-let field_impl i (ld : label_declaration) =
+let field_impl i ld =
   let loc = ld.pld_loc in
   let fieldname = ld.pld_name.txt in
   (* fieldname = typ i row *)

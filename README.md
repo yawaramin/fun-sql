@@ -111,19 +111,23 @@ There is support for deriving resultset row decoders:
 > `Fun_sqlite` or `Fun_postgresql`. You can avoid polluting your scope by putting
 > the `open`s inside submodules.
 
-To use the PPX, add to your `dune` file:
+To use the PPX, add to your `dune` file, eg:
 
 ```
-(preprocess (pps ppx_deriving_funsql))
+(executable
+  ...
+  (preprocess (pps ppx_deriving_funsql)))
 ```
 
 And to your `dune-project` file:
 
 ```
-(depends
+(package
   ...
-  ppx_deriving_funsql
-  ...)
+  (depends
+    ...
+    ppx_deriving_funsql
+    ...))
 ```
 
 ### Deriving for custom types with the PPX
@@ -135,7 +139,7 @@ The PPX supports the following basic types:
 - `float`
 - `int64`
 - `bool`
-- `some option` where `some` is a type which can be derived. This can be used to
+- `t option` where `t` is a type which can be derived. This can be used to
   represent a nullable type.
 
 It also supports custom types as long as the type is in a module which conforms
