@@ -93,10 +93,85 @@ let opt_person_1 = optional
 
 let ppl = [{ name = "B"; age = None }; { name = "C"; age = Some 3 }]
 
+(* Batch insert works with SQLite only: *)
 let () = batch_insert
   db
   (sql "insert into people (name, age) values (%a, %a)" placeholder 0 placeholder 1)
   ppl
   (fun { name; age } -> Arg.[text name; opt int age])
   unit
+```
+
+### PPX
+
+There is support for deriving resultset row decoders:
+
+> [!NOTE]
+> One of the query modules _must_ be `open`ed for the PPX to work, ie either
+> `Fun_sqlite` or `Fun_postgresql`. You can avoid polluting your scope by putting
+> the `open`s inside submodules.
+
+To use the PPX, add to your `dune` file, eg:
+
+```
+(executable
+  ...
+  (preprocess (pps ppx_deriving_funsql)))
+```
+
+And to your `dune-project` file:
+
+```
+(package
+  ...
+  (depends
+    ...
+    ppx_deriving_funsql
+    ...))
+```
+
+### Deriving for custom types with the PPX
+
+The PPX supports the following basic types:
+
+- `int`
+- `string`
+- `float`
+- `int64`
+- `bool`
+- `t option` where `t` is a type which can be derived. This can be used to
+  represent a nullable type.
+
+It also supports custom types as long as the type is in a module which conforms
+to the signature:
+
+```ocaml
+sig
+  type t
+  val of_string : string -> t
+end
+```
+
+In other words it uses the module to 'find' the parser of the type from its
+string representation. Eg:
+
+```
+# #require "decimal";;
+# module Person = struct
+    open Fun_sqlite
+    type t = { name : string; age : Decimal.t option } [@@deriving funsql]
+end;;
+module Person :
+  sig
+    type t = { name : string; age : Decimal.t option; }
+    val ret : t Seq.t ret
+  end
+# let db = Sqlite3.db_open "fun.db";;
+val db : db = <abstr>
+# #install_printer Decimal.pp;;
+# List.of_seq (query db "select name, age from people" Person.ret);;
+- : Person.t list =
+[{Person.name = "Tim"; age = Some 36}; {Person.name = "Bob"; age = Some 32};
+ {Person.name = "Foo"; age = Some 1}; {Person.name = "X"; age = Some 22};
+ {Person.name = "N"; age = Some 55}]
 ```

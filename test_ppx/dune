@@ -1,0 +1,17 @@
+(executable
+ (name test_ppx)
+ (modules test_ppx)
+ (libraries ppx_deriving_funsql))
+
+(rule
+ (targets test.actual.ml)
+ (action
+  (run ./test_ppx.exe -o %{targets} test.ml)))
+
+(test
+ (name test)
+ (modules test)
+ (package ppx_deriving_funsql)
+ (libraries fun-sqlite)
+ (action
+  (diff test.expected.ml test.actual.ml)))
