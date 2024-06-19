@@ -14,28 +14,26 @@
    You should have received a copy of the GNU General Public License along with
    fun-sql. If not, see <https://www.gnu.org/licenses/>. *)
 
-type db = Sqlite3.db
-type arg = Sqlite3.Data.t
-type row = Sqlite3.Data.t array
-
-type 'r ret =
-  | Unit : unit ret
-  | Ret : (row -> 'r) -> 'r Seq.t ret
-
 let placeholder f _ = Format.pp_print_char f '?'
 
 open Sqlite3
+
+type nonrec db = db
+type arg = Data.t
+type row = Data.t array
 
 let check_rc = function
   | Rc.OK | DONE -> ()
   | rc -> failwith (Rc.to_string rc)
 
-let query : type r. db -> string -> ?args:arg list -> r ret -> r =
+let query : type r. db -> string -> arg list -> (row, r) Fun_sql.ret -> r =
  fun db sql ->
   let stmt = prepare db sql in
-  fun ?args ->
+  fun args ->
     ignore @@ reset stmt;
-    Option.iter (fun arg -> check_rc @@ bind_values stmt arg) args;
+    (match args with
+    | [] -> ()
+    | _ -> check_rc @@ bind_values stmt args);
     function
     | Unit ->
       check_rc @@ step stmt;
@@ -80,8 +78,8 @@ module Arg = struct
     | None -> Data.NULL
 end
 
-let unit = Unit
-let ret decode = Ret decode
+let unit = Fun_sql.Unit
+let ret decode = Fun_sql.Ret decode
 
 let int64 pos row =
   match row.(pos) with

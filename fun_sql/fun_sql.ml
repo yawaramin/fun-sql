@@ -2,6 +2,13 @@
     You normally will not be using this module, instead you would directly use
     either [Fun_sqlite] or [Fun_postgresql]. *)
 
+(** A decoder of a single row of the resultset from running a query. *)
+type (-'row, 'r) ret =
+  | Unit : ('row, unit) ret
+      (** This is used for queries which do not return result rows. *)
+  | Ret : ('row -> 'r) -> ('row, 'r Seq.t) ret
+      (** This is for queries which return result rows. *)
+
 module type Sql = sig
   type db
   (** The database connection or file, etc. *)
@@ -9,8 +16,8 @@ module type Sql = sig
   type arg
   (** A value sent to the database in the place of a query parameter. *)
 
-  type _ ret
-  (** A decoder of a single row of the resultset from running a query. *)
+  type row
+  (** A tuple from the database. *)
 
   val placeholder : Format.formatter -> int -> unit
   (** A generic way to write placeholders for different database drivers'
@@ -20,7 +27,7 @@ module type Sql = sig
 
   (** {2 Query runners} *)
 
-  val query : db -> string -> ?args:arg list -> 'r ret -> 'r
+  val query : db -> string -> arg list -> (row, 'r) ret -> 'r
   (** The main function through which queries are run is the [query] function.
       This function {e always} creates a prepared statement for each partial call
       to [query db sql]. This prepared statement can then be called with the
@@ -28,7 +35,7 @@ module type Sql = sig
 
       {[let add_person =
           query db (sql "insert into people (name, age) values (%a, %a)" placeholder 0 placeholder 1)
-        let add_person name age = add_person ~args:Arg.[text name; int age] unit]}
+        let add_person name age = add_person Arg.[text name; int age] unit]}
 
       @raise Invalid_argument if trying to create multiple prepared statements
         for the same SQL query in PostgreSQL. To avoid this, just create the
@@ -62,12 +69,10 @@ module type Sql = sig
 
   (** {2 Return types} *)
 
-  type row
-
-  val unit : unit ret
+  val unit : (row, unit) ret
   (** [unit] indicates that the query doesn't return any meaningful output. *)
 
-  val ret : (row -> 'a) -> 'a Seq.t ret
+  val ret : (row -> 'a) -> (row, 'a Seq.t) ret
   (** [ret decode] is a custom return type encoding for a resultset into a
     sequence of values of the type decoded by [decode].
 
@@ -101,7 +106,6 @@ end
 module type S = sig
   type db
   type arg
-  type _ ret
 
   val sql : ('a, Format.formatter, unit, string) format4 -> 'a
   (** Helper to construct SQL query strings using [placeholder]s. *)
@@ -153,12 +157,10 @@ module type S = sig
     @raise More_than_one if [seq] has more than 1 item. *)
 end
 
-module Make (Sql : Sql) :
-  S with type db = Sql.db and type arg = Sql.arg and type 'a ret = 'a Sql.ret =
+module Make (Sql : Sql) : S with type db = Sql.db and type arg = Sql.arg =
 struct
   type db = Sql.db
   type arg = Sql.arg
-  type 'a ret = 'a Sql.ret
 
   let sql = Format.asprintf
 
@@ -183,13 +185,13 @@ struct
   open Sql
 
   let transaction db f =
-    query db "begin" unit;
+    query db "begin" [] unit;
     match f () with
     | r ->
-      query db "commit" unit;
+      query db "commit" [] unit;
       r
     | exception e ->
-      query db "rollback" unit;
+      query db "rollback" [] unit;
       raise e
 
   let slurp file =
@@ -221,7 +223,7 @@ struct
       0
       |> bool
       |> ret
-      |> migrated ~args:[filename]
+      |> migrated [filename]
       |> optional
       |> Option.fold ~none:false ~some:Fun.id
     in
@@ -239,6 +241,6 @@ struct
          then
            let script = slurp filename in
            match exec_script db script with
-           | () -> mark_ok ~args:Arg.[arg_filename; text script] unit
+           | () -> mark_ok Arg.[arg_filename; text script] unit
            | exception Failure msg -> raise (Bad_migration msg)
 end

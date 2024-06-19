@@ -46,6 +46,6 @@ let batch_insert db sql objs obj_args =
     let sql =
       Str.matched_group pre_pos sql ^ tuples ^ Str.matched_group post_pos sql
     in
-    query db sql ~args:(objs |> List.map obj_args |> List.flatten)
+    query db sql (objs |> List.map obj_args |> List.flatten)
   else
     failwith sql

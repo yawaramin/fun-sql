@@ -28,7 +28,7 @@ Designed to make it easy to create prepared statements and then use them:
 let edit_note = query db "update note set txt = $1 where id = $2"
 
 (* Use by simply calling it: *)
-let edit_note id txt = edit_note ~args:Arg.[int id; text txt] unit
+let edit_note id txt = edit_note Arg.[int id; text txt] unit
 ```
 
 ### Examples
@@ -42,20 +42,20 @@ let db = new Postgresql.connection ~conninfo:"postgresql://..." ()
 (* Or: let db = Sqlite3.db_open ":memory:" *)
 
 (* DDL query with no arguments and no return *)
-let () = query db "create table people (name text not null, age int)" unit
+let () = query db "create table people (name text not null, age int)" [] unit
 
 (* Insert query with single row *)
 let () = query
   db
   (sql "insert into people (name, age) values (%a, %a)" placeholder 0 placeholder 1)
-  ~args:Arg.[text "A"; int 1]
+  Arg.[text "A"; int 1]
   unit
 
 (* Get single column of results from DB *)
 let names = query
   db
   (sql "select name from people where age = %a" placeholder 0)
-  ~args:Arg.[int 1]
+  Arg.[int 1]
   @@ ret @@ text 0
 (* val names : string Seq.t = <fun> *)
 
@@ -63,12 +63,12 @@ let () =
   query
     db
     (sql "insert into people (name) values (%a)" placeholder 0)
-    ~args:Arg.[text "B"]
+    Arg.[text "B"]
     unit
 
 (* Get optional values *)
 let ages = List.of_seq
-  @@ query db "select age from people" @@ ret @@ opt int 0
+  @@ query db "select age from people" [] (ret (opt int 0))
 (* val ages : int option list = [Some 1; None] *)
 
 (* Map return data to a custom type on the fly–see also below for a PPX deriver
@@ -80,13 +80,13 @@ let person row = { name = text 0 row; age = opt int 1 row }
 
 (* Assert resultset has a single row and map it *)
 let person_1 = only
-  @@ query db (sql "select name, age from people where age = %a" placeholder 0) ~args:Arg.[int 1]
+  @@ query db (sql "select name, age from people where age = %a" placeholder 0) Arg.[int 1]
   @@ ret person
 (* val person_1 : person = {name = "A"; age = Some 1} *)
 
 (* Assert resultset has either 0 or 1 element *)
 let opt_person_1 = optional
-  @@ query db (sql "select name, age from people where age = %a" placeholder 0) ~args:Arg.[int 2]
+  @@ query db (sql "select name, age from people where age = %a" placeholder 0) Arg.[int 2]
   @@ ret person
 (* val opt_person_1 : person option = None *)
 
@@ -170,7 +170,7 @@ module Person :
 # let db = Sqlite3.db_open "fun.db";;
 val db : db = <abstr>
 # #install_printer Decimal.pp;;
-# List.of_seq (query db "select name, age from people" Person.ret);;
+# List.of_seq (query db "select name, age from people" [] Person.ret);;
 - : Person.t list =
 [{Person.name = "Tim"; age = Some 36}; {Person.name = "Bob"; age = Some 32};
  {Person.name = "Foo"; age = Some 1}; {Person.name = "X"; age = Some 22};

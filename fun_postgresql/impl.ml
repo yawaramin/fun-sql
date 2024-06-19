@@ -18,13 +18,9 @@ type db = Postgresql.connection
 type arg = string
 type row = string array
 
-type 'r ret =
-  | Unit : unit ret
-  | Ret : (row -> 'r) -> 'r Seq.t ret
-
 let placeholder f n = Format.fprintf f "$%d" (n + 1)
 
-let query : type r. db -> string -> ?args:arg list -> r ret -> r =
+let query : type r. db -> string -> arg list -> (row, r) Fun_sql.ret -> r =
  fun db sql ->
   let stm_name = Digest.(to_hex (string sql)) in
   let result = db#prepare stm_name sql in
@@ -32,8 +28,12 @@ let query : type r. db -> string -> ?args:arg list -> r ret -> r =
   | Postgresql.Bad_response | Nonfatal_error -> failwith result#error
   | Fatal_error -> invalid_arg result#error
   | _ -> (
-    fun ?args ->
-      let params = Option.map Array.of_list args in
+    fun args ->
+      let params =
+        match args with
+        | [] -> None
+        | _ -> Some (Array.of_list args)
+      in
       let result = db#exec_prepared ?params stm_name in
       match result#status with
       | Postgresql.Tuples_ok | Command_ok | Single_tuple -> (
@@ -65,8 +65,8 @@ module Arg = struct
     | None -> Postgresql.null
 end
 
-let unit = Unit
-let ret decode = Ret decode
+let unit = Fun_sql.Unit
+let ret decode = Fun_sql.Ret decode
 let int64 pos row = Int64.of_string row.(pos)
 let int pos row = int_of_string row.(pos)
 let bool pos row = bool_of_string row.(pos)

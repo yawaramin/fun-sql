@@ -20,7 +20,7 @@
     numbered placeholders, which makes it much more difficult to parse out and
     modify the insert query with the correct number of placeholders. *)
 
-include Fun_sql.Sql with type db = Postgresql.connection
-
 include
-  Fun_sql.S with type db := db and type arg := arg and type 'a ret := 'a ret
+  Fun_sql.Sql with type db = Postgresql.connection and type row = string array
+
+include Fun_sql.S with type db := db and type arg := arg
