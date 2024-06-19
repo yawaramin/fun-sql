@@ -72,4 +72,4 @@ let generate_impl ~ctxt (_rec_flag, type_declarations) =
   |> List.concat
 
 let str_type_decl = Deriving.Generator.V2.make_noarg generate_impl
-let funsql = Deriving.add ~str_type_decl "funsql"
+let _ = Deriving.add ~str_type_decl "funsql"

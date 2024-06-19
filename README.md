@@ -71,7 +71,8 @@ let ages = List.of_seq
   @@ query db "select age from people" @@ ret @@ opt int 0
 (* val ages : int option list = [Some 1; None] *)
 
-(* Map return data to a custom type on the fly *)
+(* Map return data to a custom type on the fly–see also below for a PPX deriver
+   that automates this boilerplate *)
 type person = { name : string; age : int option }
 
 let person row = { name = text 0 row; age = opt int 1 row }
