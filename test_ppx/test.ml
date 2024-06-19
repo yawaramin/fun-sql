@@ -1,4 +1,4 @@
-open Fun_sqlite
+open! Fun_sqlite
 
 type t =
   { name : string;

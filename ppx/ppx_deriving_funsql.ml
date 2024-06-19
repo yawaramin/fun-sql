@@ -43,32 +43,32 @@ let field_impl i ld =
 let generate_impl ~ctxt (_rec_flag, type_declarations) =
   let loc = Expansion_context.Deriver.derived_item_loc ctxt in
   List.map type_declarations ~f:(fun (td : type_declaration) ->
-      match td with
-      | { ptype_kind = Ptype_abstract | Ptype_variant _ | Ptype_open;
-          ptype_loc;
-          _
-        } ->
-        let ext =
-          Location.error_extensionf ~loc:ptype_loc
-            "Cannot derive accessors for non-record types"
-        in
-        [pstr_extension ~loc ext []]
-      | { ptype_kind = Ptype_record fields; _ } ->
-        (* let ret = ret (fun row -> { ... }) *)
-        [ (try
-             pstr_value ~loc Nonrecursive
-               [ value_binding ~loc
-                   ~pat:(ppat_var ~loc { loc; txt = ret })
-                   ~expr:
-                     (eapply ~loc (evar ~loc ret)
-                        [ eabstract ~loc
-                            [ppat_var ~loc { txt = row; loc }]
-                            (pexp_record ~loc
-                               (List.mapi fields ~f:field_impl)
-                               None) ]) ]
-           with Failure msg ->
-             pstr_extension ~loc (Location.error_extensionf ~loc "%s" msg) [])
-        ])
+      [ (match td with
+        | { ptype_kind = Ptype_abstract | Ptype_variant _ | Ptype_open;
+            ptype_loc;
+            _
+          } ->
+          let ext =
+            Location.error_extensionf ~loc:ptype_loc
+              "Cannot derive accessors for non-record types"
+          in
+          pstr_extension ~loc ext []
+        | { ptype_kind = Ptype_record fields; _ } -> (
+          (* let ret = ret (fun row -> { ... }) *)
+          try
+            pstr_value ~loc Nonrecursive
+              [ value_binding ~loc
+                  ~pat:(ppat_var ~loc { loc; txt = ret })
+                  ~expr:
+                    (eapply ~loc (evar ~loc ret)
+                       [ eabstract ~loc
+                           [ppat_var ~loc { txt = row; loc }]
+                           (pexp_record ~loc
+                              (List.mapi fields ~f:field_impl)
+                              None) ]) ]
+          with Failure msg ->
+            pstr_extension ~loc (Location.error_extensionf ~loc "%s" msg) []))
+      ])
   |> List.concat
 
 let str_type_decl = Deriving.Generator.V2.make_noarg generate_impl
