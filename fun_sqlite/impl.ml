@@ -78,9 +78,6 @@ module Arg = struct
     | None -> Data.NULL
 end
 
-let unit = Fun_sql.Unit
-let ret decode = Fun_sql.Ret decode
-
 let int64 pos row =
   match row.(pos) with
   | Data.INT value -> value

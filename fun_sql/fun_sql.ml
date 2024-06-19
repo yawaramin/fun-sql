@@ -1,6 +1,6 @@
 (** This module is used for common code across different SQL database engines.
-    You normally will not be using this module, instead you would directly use
-    either [Fun_sqlite] or [Fun_postgresql]. *)
+    You normally will use either [Fun_sqlite] or [Fun_postgresql] as your entry-
+    point for querying. *)
 
 (** A decoder of a single row of the resultset from running a query. *)
 type (-'row, 'r) ret =
@@ -8,6 +8,23 @@ type (-'row, 'r) ret =
       (** This is used for queries which do not return result rows. *)
   | Ret : ('row -> 'r) -> ('row, 'r Seq.t) ret
       (** This is for queries which return result rows. *)
+
+(** [unit] indicates that the query doesn't return any meaningful output. *)
+let unit = Unit
+
+(** [ret decode] is a custom return type encoding for a resultset into a
+    sequence of values of the type decoded by [decode].
+
+    [decode] constructs a value of the custom type if possible, else raises
+    [Failure].
+
+    Note that the sequence rows of the resultset is unfolded as it is read from
+    the database. It can only be traversed {i once,} with e.g. [List.of_seq] or
+    [Seq.iter]. If traversed multiple times, it will raise [Failure].
+
+    @raise Invalid_argument if any row cannot be decoded.
+    @raise Failure if an unexpected result code is encountered. *)
+let ret decode = Ret decode
 
 module type Sql = sig
   type db
@@ -66,25 +83,6 @@ module type Sql = sig
     val opt : ('a -> arg) -> 'a option -> arg
     (** [opt data value] is the optional [value] encoded as query data. *)
   end
-
-  (** {2 Return types} *)
-
-  val unit : (row, unit) ret
-  (** [unit] indicates that the query doesn't return any meaningful output. *)
-
-  val ret : (row -> 'a) -> (row, 'a Seq.t) ret
-  (** [ret decode] is a custom return type encoding for a resultset into a
-    sequence of values of the type decoded by [decode].
-
-    [decode] constructs a value of the custom type if possible, else raises
-    [Failure].
-
-    Note that the sequence rows of the resultset is unfolded as it is read from
-    the database. It can only be traversed {i once,} with e.g. [List.of_seq] or
-    [Seq.iter]. If traversed multiple times, it will raise [Failure].
-
-    @raise Invalid_argument if any row cannot be decoded.
-    @raise Failure if an unexpected result code is encountered. *)
 
   (** {3 Helpers to get typed values from columns} *)
 

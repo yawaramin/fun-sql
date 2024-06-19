@@ -2,7 +2,6 @@ open Ppxlib
 module List = ListLabels
 open Ast_builder.Default
 
-let ret = "ret"
 let row = "row"
 
 let rec typ ~loc fname = function
@@ -58,9 +57,9 @@ let generate_impl ~ctxt (_rec_flag, type_declarations) =
           try
             pstr_value ~loc Nonrecursive
               [ value_binding ~loc
-                  ~pat:(ppat_var ~loc { loc; txt = ret })
+                  ~pat:(ppat_var ~loc { loc; txt = "ret" })
                   ~expr:
-                    (eapply ~loc (evar ~loc ret)
+                    (eapply ~loc (evar ~loc "Fun_sql.ret")
                        [ eabstract ~loc
                            [ppat_var ~loc { txt = row; loc }]
                            (pexp_record ~loc

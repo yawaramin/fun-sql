@@ -65,8 +65,6 @@ module Arg = struct
     | None -> Postgresql.null
 end
 
-let unit = Fun_sql.Unit
-let ret decode = Fun_sql.Ret decode
 let int64 pos row = Int64.of_string row.(pos)
 let int pos row = int_of_string row.(pos)
 let bool pos row = bool_of_string row.(pos)
