@@ -4,9 +4,10 @@
  (libraries ppx_deriving_funsql))
 
 (rule
+ (deps test.ml)
  (targets test.actual.ml)
  (action
-  (run ./test_ppx.exe -o %{targets} test.ml)))
+  (run ./test_ppx.exe -o %{targets} %{deps})))
 
 (test
  (name test)
