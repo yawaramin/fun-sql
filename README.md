@@ -183,3 +183,7 @@ val db : db = <abstr>
  {Person.name = "Foo"; age = Some 1}; {Person.name = "X"; age = Some 22};
  {Person.name = "N"; age = Some 55}]
 ```
+
+> [!WARNING]
+> The record type fields must be declared in the same order as the `select`
+> clause fields in the SQL query, as the deriver relies on this ordering.
