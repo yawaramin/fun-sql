@@ -165,25 +165,30 @@ string representation. Eg:
 
 ```
 # #require "decimal";;
+# #install_printer Decimal.pp;;
+# let db = Sqlite3.db_open "fun.db";;
+val db : Sqlite3.db = <abstr>
 # module Person = struct
-    open Fun_sqlite
-    type t = { name : string; age : Decimal.t option } [@@deriving funsql]
+  open Fun_sqlite
+
+  type t = { name : string; age : Decimal.t option } [@@deriving funsql]
+
+  let by_name = query db (sql "select name, age from people where name = %a" placeholder 0)
+  let by_name name = by_name Arg.[text name] ret
 end;;
 module Person :
   sig
     type t = { name : string; age : Decimal.t option; }
-    val ret : (row, t Seq.t) Fun_sql.ret
+    val ret : (Fun_sqlite.row, t Seq.t) Fun_sql.ret
+    val by_name : string -> t Seq.t
   end
-# let db = Sqlite3.db_open "fun.db";;
-val db : db = <abstr>
-# #install_printer Decimal.pp;;
-# List.of_seq (query db "select name, age from people" [] Person.ret);;
-- : Person.t list =
-[{Person.name = "Tim"; age = Some 36}; {Person.name = "Bob"; age = Some 32};
- {Person.name = "Foo"; age = Some 1}; {Person.name = "X"; age = Some 22};
- {Person.name = "N"; age = Some 55}]
+# List.of_seq (Person.by_name "Bob");;
+- : Person.t list = [{Person.name = "Bob"; age = Some 32}]
 ```
 
 > [!WARNING]
 > The record type fields must be declared in the same order as the `select`
 > clause fields in the SQL query, as the deriver relies on this ordering.
+
+I believe this is not a huge problem though, because fortunately OCaml makes it
+easy to create small, dedicated submodules for each query as needed.
