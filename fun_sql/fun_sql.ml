@@ -1,6 +1,8 @@
 (** This module is used for common code across different SQL database engines.
     You normally will use either [Fun_sqlite] or [Fun_postgresql] as your entry-
-    point for querying. *)
+    point for querying, and this one to access some helpers. *)
+
+let sql = Format.asprintf
 
 (** A decoder of a single row of the resultset from running a query. *)
 type (-'row, 'r) ret =
@@ -25,6 +27,26 @@ let unit = Unit
     @raise Invalid_argument if any row cannot be decoded.
     @raise Failure if an unexpected result code is encountered. *)
 let ret decode = Ret decode
+
+(** {3 Helpers to deal with resultset sequences} *)
+
+exception More_than_one
+(** Thrown if we are expecting at most one result but get more. *)
+
+(** [one seq] is [Some a] if [a] is the first and only element of [seq], or
+    [None] if [seq] is empty.
+
+    @raise More_than_one if [seq] contains more than one element.  *)
+let one seq =
+  match seq () with
+  | Seq.Nil -> None
+  | Cons (a, seq) -> (
+    match seq () with
+    | Nil -> Some a
+    | Cons (_, _) -> raise More_than_one)
+
+(** Get all results together. *)
+let all = List.to_seq
 
 module type Sql = sig
   type db
@@ -105,9 +127,6 @@ module type S = sig
   type db
   type arg
 
-  val sql : ('a, Format.formatter, unit, string) format4 -> 'a
-  (** Helper to construct SQL query strings using [placeholder]s. *)
-
   exception Bad_migration of string
 
   val migrate : db -> string -> unit
@@ -131,54 +150,12 @@ module type S = sig
     operation succeeds, it commits the transaction and returns its result. If it
     fails with an exception, it rolls back the transaction and re-raises the
     exception. *)
-
-  (** {3 Helpers to deal with resultset sequences} *)
-
-  exception More_than_one
-  (** Thrown if we are expecting at most one result but get more. *)
-
-  val only : 'a Seq.t -> 'a
-  (** [only seq] is the first and only element of [seq]. This is a convenience
-    function because all queries return seqs but sometimes we want only a single
-    item, otherwise it should be an error.
-
-    Use this in preference to calculating the length of the [seq], which would
-    force the entire data structure.
-
-    @raise Not_found if [seq] has 0 items.
-    @raise More_than_one if [seq] has more than 1 item. *)
-
-  val optional : 'a Seq.t -> 'a option
-  (** [optional seq] is [Some a] if [a] is the first and only element of [seq], or
-    [None] if [seq] is empty.
-
-    @raise More_than_one if [seq] has more than 1 item. *)
 end
 
 module Make (Sql : Sql) : S with type db = Sql.db and type arg = Sql.arg =
 struct
   type db = Sql.db
   type arg = Sql.arg
-
-  let sql = Format.asprintf
-
-  exception More_than_one
-
-  let only seq =
-    match seq () with
-    | Seq.Nil -> raise Not_found
-    | Cons (a, seq) -> (
-      match seq () with
-      | Nil -> a
-      | Cons (_, _) -> raise More_than_one)
-
-  let optional seq =
-    match seq () with
-    | Seq.Nil -> None
-    | Cons (a, seq) -> (
-      match seq () with
-      | Nil -> Some a
-      | Cons (_, _) -> raise More_than_one)
 
   open Sql
 
@@ -222,7 +199,7 @@ struct
       |> bool
       |> ret
       |> migrated [filename]
-      |> optional
+      |> one
       |> Option.fold ~none:false ~some:Fun.id
     in
     fun dir ->

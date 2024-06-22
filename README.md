@@ -34,6 +34,7 @@ let edit_note id txt = edit_note Arg.[int id; text txt] Fun_sql.unit
 ### Examples
 
 ```ocaml
+open Fun_sql
 open Fun_postgresql
 (* Or: Fun_sqlite *)
 
@@ -42,21 +43,21 @@ let db = new Postgresql.connection ~conninfo:"postgresql://..." ()
 (* Or: let db = Sqlite3.db_open ":memory:" *)
 
 (* DDL query with no arguments and no return *)
-let () = query db "create table people (name text not null, age int)" [] Fun_sql.unit
+let () = query db "create table people (name text not null, age int)" [] unit
 
 (* Insert query with single row *)
 let () = query
   db
   (sql "insert into people (name, age) values (%a, %a)" placeholder 0 placeholder 1)
   Arg.[text "A"; int 1]
-  Fun_sql.unit
+  unit
 
 (* Get single column of results from DB *)
 let names = query
   db
   (sql "select name from people where age = %a" placeholder 0)
   Arg.[int 1]
-  (Fun_sql.ret (text 0))
+  (ret (text 0))
 (* val names : string Seq.t = <fun> *)
 
 let () =
@@ -64,38 +65,28 @@ let () =
     db
     (sql "insert into people (name) values (%a)" placeholder 0)
     Arg.[text "B"]
-    Fun_sql.unit
+    unit
 
 (* Get optional values *)
-let ages = List.of_seq (query db "select age from people" [] (Fun_sql.ret (opt int 0)))
+let ages = all (query db "select age from people" [] (ret (opt int 0)))
 (* val ages : int option list = [Some 1; None] *)
 
 (* Map return data to a custom type on the fly–see also below for a PPX deriver
    that automates this boilerplate *)
 type person = { name : string; age : int option }
 
-let ret = Fun_sql.ret (fun row -> { name = text 0 row; age = opt int 1 row })
-(* val ret : (row, person Seq.t) Fun_sql.ret *)
+let ret = ret (fun row -> { name = text 0 row; age = opt int 1 row })
+(* val ret : (row, person Seq.t) ret *)
 
-(* Assert resultset has a single row and map it *)
+(* Assert resultset has at most a single row and map it *)
 let person_1 =
-  only (
+  one (
     query
       db
       (sql "select name, age from people where age = %a" placeholder 0)
       Arg.[int 1]
       ret)
-(* val person_1 : person = {name = "A"; age = Some 1} *)
-
-(* Assert resultset has either 0 or 1 element *)
-let opt_person_1 =
-  optional (
-    query
-      db
-      (sql "select name, age from people where age = %a" placeholder 0)
-      Arg.[int 2]
-      ret)
-(* val opt_person_1 : person option = None *)
+(* val person_1 : person option = Some {name = "A"; age = Some 1} *)
 
 (* Batch insert *)
 
@@ -107,7 +98,7 @@ let () = batch_insert
   (sql "insert into people (name, age) values (%a, %a)" placeholder 0 placeholder 1)
   ppl
   (fun { name; age } -> Arg.[text name; opt int age])
-  Fun_sql.unit
+  unit
 ```
 
 ### PPX
