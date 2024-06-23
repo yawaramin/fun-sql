@@ -59,7 +59,7 @@ let generate_impl ~ctxt (_rec_flag, type_declarations) =
               [ value_binding ~loc
                   ~pat:(ppat_var ~loc { loc; txt = "ret" })
                   ~expr:
-                    (eapply ~loc (evar ~loc "Fun_sql.ret")
+                    (eapply ~loc (evar ~loc "ret")
                        [ eabstract ~loc
                            [ppat_var ~loc { txt = row; loc }]
                            (pexp_record ~loc

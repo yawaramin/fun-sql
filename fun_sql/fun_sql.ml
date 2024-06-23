@@ -1,20 +1,23 @@
 (** This module is used for common code across different SQL database engines.
     You normally will use either [Fun_sqlite] or [Fun_postgresql] as your entry-
-    point for querying, and this one to access some helpers. *)
+    point for querying. *)
 
-let sql = Format.asprintf
+module type Query_sig = sig
+  (** {2 Database-agnostic query helpers} *)
 
-(** A decoder of a single row of the resultset from running a query. *)
-type (-'row, 'r) ret =
-  | Unit : ('row, unit) ret
-      (** This is used for queries which do not return result rows. *)
-  | Ret : ('row -> 'r) -> ('row, 'r Seq.t) ret
-      (** This is for queries which return result rows. *)
+  val sql : ('a, Format.formatter, unit, string) format4 -> 'a
+  (** Convenience for formatting query strings with placeholders. Eg
 
-(** [unit] indicates that the query doesn't return any meaningful output. *)
-let unit = Unit
+    {[sql "select name from people where id = %a" placeholder 0]} *)
 
-(** [ret decode] is a custom return type encoding for a resultset into a
+  type (-'row, 'r) ret
+  (** A decoder of a single row of the resultset from running a query. *)
+
+  val unit : ('row, unit) ret
+  (** [unit] indicates that the query doesn't return any meaningful output. *)
+
+  val ret : ('row -> 'r) -> ('row, 'r Seq.t) ret
+  (** [ret decode] is a custom return type encoding for a resultset into a
     sequence of values of the type decoded by [decode].
 
     [decode] constructs a value of the custom type if possible, else raises
@@ -26,29 +29,46 @@ let unit = Unit
 
     @raise Invalid_argument if any row cannot be decoded.
     @raise Failure if an unexpected result code is encountered. *)
-let ret decode = Ret decode
 
-(** {3 Helpers to deal with resultset sequences} *)
+  val one : 'a Seq.t -> 'a option
+  val all : 'a Seq.t -> 'a list
+end
 
-exception More_than_one
-(** Thrown if we are expecting at most one result but get more. *)
+module Query = struct
+  let sql = Format.asprintf
 
-(** [one seq] is [Some a] if [a] is the first and only element of [seq], or
+  type (-'row, 'r) ret =
+    | Unit : ('row, unit) ret
+        (** This is used for queries which do not return result rows. *)
+    | Ret : ('row -> 'r) -> ('row, 'r Seq.t) ret
+        (** This is for queries which return result rows. *)
+
+  let unit = Unit
+  let ret decode = Ret decode
+
+  exception More_than_one
+  (** Thrown if we are expecting at most one result but get more. *)
+
+  (** [one seq] is [Some a] if [a] is the first and only element of [seq], or
     [None] if [seq] is empty.
 
     @raise More_than_one if [seq] contains more than one element.  *)
-let one seq =
-  match seq () with
-  | Seq.Nil -> None
-  | Cons (a, seq) -> (
+  let one seq =
     match seq () with
-    | Nil -> Some a
-    | Cons (_, _) -> raise More_than_one)
+    | Seq.Nil -> None
+    | Cons (a, seq) -> (
+      match seq () with
+      | Nil -> Some a
+      | Cons (_, _) -> raise More_than_one)
 
-(** Get all results together. *)
-let all = List.to_seq
+  (** Get all results together. *)
+  let all = List.of_seq
+end
 
+(** The definitions supported by a database engine. *)
 module type Sql = sig
+  (** {2 Database-specific definitions} *)
+
   type db
   (** The database connection or file, etc. *)
 
@@ -66,7 +86,7 @@ module type Sql = sig
 
   (** {2 Query runners} *)
 
-  val query : db -> string -> arg list -> (row, 'r) ret -> 'r
+  val query : db -> string -> arg list -> (row, 'r) Query.ret -> 'r
   (** The main function through which queries are run is the [query] function.
       This function {e always} creates a prepared statement for each partial call
       to [query db sql]. This prepared statement can then be called with the
@@ -123,7 +143,10 @@ module type Sql = sig
     [col] of the result [row]. *)
 end
 
+(** Utilities defined in terms of the common shared interface of a database. *)
 module type S = sig
+  (** {2 Higher-level utilities that work across supported DBs} *)
+
   type db
   type arg
 
@@ -160,13 +183,13 @@ struct
   open Sql
 
   let transaction db f =
-    query db "begin" [] unit;
+    query db "begin" [] Query.unit;
     match f () with
     | r ->
-      query db "commit" [] unit;
+      query db "commit" [] Query.unit;
       r
     | exception e ->
-      query db "rollback" [] unit;
+      query db "rollback" [] Query.unit;
       raise e
 
   let slurp file =
@@ -186,20 +209,21 @@ struct
        )";
     let mark_ok =
       query db
-        (sql
+        (Query.sql
            "insert into migration (filename, script, applied_at)
             values (%a, %a, current_timestamp)"
            placeholder 0 placeholder 1)
     in
     let migrated =
-      query db (sql "select 1 from migration where filename = %a" placeholder 0)
+      query db
+        (Query.sql "select 1 from migration where filename = %a" placeholder 0)
     in
     let migrated filename =
       0
       |> bool
-      |> ret
+      |> Query.ret
       |> migrated [filename]
-      |> one
+      |> Query.one
       |> Option.fold ~none:false ~some:Fun.id
     in
     fun dir ->
@@ -216,6 +240,6 @@ struct
          then
            let script = slurp filename in
            match exec_script db script with
-           | () -> mark_ok Arg.[arg_filename; text script] unit
+           | () -> mark_ok Arg.[arg_filename; text script] Query.unit
            | exception Failure msg -> raise (Bad_migration msg)
 end

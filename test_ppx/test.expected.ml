@@ -7,7 +7,7 @@ include
   struct
     let _ = fun (_ : t) -> ()
     let ret =
-      Fun_sql.ret
+      ret
         (fun row ->
            {
              name = (text 0 row);

@@ -25,7 +25,7 @@ Designed to make it easy to create prepared statements and then use them:
 
 ```ocaml
 (* Prepared statement: *)
-let edit_note = query db "update note set txt = $1 where id = $2"
+let edit_note = query db "update note set txt = ? where id = $2"
 
 (* Use by simply calling it: *)
 let edit_note id txt = edit_note Arg.[int id; text txt] Fun_sql.unit
@@ -34,7 +34,6 @@ let edit_note id txt = edit_note Arg.[int id; text txt] Fun_sql.unit
 ### Examples
 
 ```ocaml
-open Fun_sql
 open Fun_postgresql
 (* Or: Fun_sqlite *)
 
@@ -170,11 +169,13 @@ end;;
 module Person :
   sig
     type t = { name : string; age : Decimal.t option; }
-    val ret : (Fun_sqlite.row, t Seq.t) Fun_sql.ret
+    val ret : (row, t Seq.t) ret
     val by_name : string -> t Seq.t
   end
-# List.of_seq (Person.by_name "Bob");;
+# all (Person.by_name "Bob");;
 - : Person.t list = [{Person.name = "Bob"; age = Some 32}]
+# one (Person.by_name "X");;
+- : Person.t option = Some {Person.name = "X"; age = Some 22}
 ```
 
 > [!WARNING]

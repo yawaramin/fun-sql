@@ -22,11 +22,13 @@ type nonrec db = db
 type arg = Data.t
 type row = Data.t array
 
+include Fun_sql.Query
+
 let check_rc = function
   | Rc.OK | DONE -> ()
   | rc -> failwith (Rc.to_string rc)
 
-let query : type r. db -> string -> arg list -> (row, r) Fun_sql.ret -> r =
+let query : type r. db -> string -> arg list -> (row, r) ret -> r =
  fun db sql ->
   let stmt = prepare db sql in
   fun args ->

@@ -18,9 +18,11 @@ type db = Postgresql.connection
 type arg = string
 type row = string array
 
+include Fun_sql.Query
+
 let placeholder f n = Format.fprintf f "$%d" (n + 1)
 
-let query : type r. db -> string -> arg list -> (row, r) Fun_sql.ret -> r =
+let query : type r. db -> string -> arg list -> (row, r) ret -> r =
  fun db sql ->
   let stm_name = Digest.(to_hex (string sql)) in
   let result = db#prepare stm_name sql in
