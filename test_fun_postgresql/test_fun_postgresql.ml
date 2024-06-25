@@ -1,6 +1,4 @@
-let test_arg msg arg = Printf.printf "test_arg: %s
-%s
-
+let test_arg msg arg = Printf.printf "test_arg: %s: %s
 " msg arg
 
 open Fun_postgresql
@@ -19,12 +17,6 @@ let () =
   test_arg "opt int" Arg.(opt int None);
   test_arg "text" (Arg.text "hello");
 
-  Printf.printf "test_row:
-%s
-%b
-%f
-%d
-%Ld
-%s
+  Printf.printf "test_row: %s %b %f %d %Ld %s
 " (text 0 row) (bool 1 row)
     (float 2 row) (int 3 row) (int64 4 row) (text 5 row)

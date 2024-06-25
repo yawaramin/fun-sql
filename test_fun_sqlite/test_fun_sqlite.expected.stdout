@@ -1,34 +1,10 @@
-test_arg: blob
-TEXT <"world">
-
-test_arg: bool
-INT <0>
-
-test_arg: float
-FLOAT <1.000000>
-
-test_arg: int
-INT <1>
-
-test_arg: int32
-INT <1>
-
-test_arg: int64
-INT <1>
-
-test_arg: nativeint
-INT <1>
-
-test_arg: opt int
-NULL
-
-test_arg: text
-TEXT <"hello">
-
-test_row:
-hello
-true
-1.000000
-1
-1
-hello
+test_arg: blob: TEXT <"world">
+test_arg: bool: INT <0>
+test_arg: float: FLOAT <1.000000>
+test_arg: int: INT <1>
+test_arg: int32: INT <1>
+test_arg: int64: INT <1>
+test_arg: nativeint: INT <1>
+test_arg: opt int: NULL
+test_arg: text: TEXT <"hello">
+test_row: hello true 1.000000 1 1 hello
