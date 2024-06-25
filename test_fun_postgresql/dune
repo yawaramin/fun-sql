@@ -1,0 +1,11 @@
+(test
+ (name test_fun_postgresql)
+ (package fun-postgresql)
+ (libraries fun-postgresql)
+ (action
+  (diff test_fun_postgresql.expected.stdout test_fun_postgresql.stdout)))
+
+(rule
+ (with-stdout-to
+  test_fun_postgresql.stdout
+  (run ./test_fun_postgresql.exe)))

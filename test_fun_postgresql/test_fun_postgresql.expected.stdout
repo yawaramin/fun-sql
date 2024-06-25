@@ -1,0 +1,34 @@
+test_arg: blob
+world
+
+test_arg: bool
+false
+
+test_arg: float
+1.000000
+
+test_arg: int
+1
+
+test_arg: int32
+1
+
+test_arg: int64
+1
+
+test_arg: nativeint
+1
+
+test_arg: opt int
+
+
+test_arg: text
+hello
+
+test_row:
+hello
+true
+1.000000
+1
+1
+hello
