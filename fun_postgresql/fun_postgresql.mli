@@ -24,6 +24,9 @@ include
   Fun_sql.Query_sig with type ('row, 'r) ret = ('row, 'r) Fun_sql.Query.ret
 
 include
-  Fun_sql.Sql with type db = Postgresql.connection and type row = string array
+  Fun_sql.Sql
+    with type db = Postgresql.connection
+     and type arg = string
+     and type row = string array
 
 include Fun_sql.S with type db := db and type arg := arg

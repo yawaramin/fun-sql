@@ -20,7 +20,10 @@ include
   Fun_sql.Query_sig with type ('row, 'r) ret = ('row, 'r) Fun_sql.Query.ret
 
 include
-  Fun_sql.Sql with type db = Sqlite3.db and type row = Sqlite3.Data.t array
+  Fun_sql.Sql
+    with type db = Sqlite3.db
+     and type arg = Sqlite3.Data.t
+     and type row = Sqlite3.Data.t array
 
 include Fun_sql.S with type db := db and type arg := arg
 

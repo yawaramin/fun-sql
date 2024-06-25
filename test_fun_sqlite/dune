@@ -1,0 +1,11 @@
+(test
+ (name test_fun_sqlite)
+ (package fun-sqlite)
+ (libraries fun-sqlite)
+ (action
+  (diff test_fun_sqlite.expected.stdout test_fun_sqlite.stdout)))
+
+(rule
+ (with-stdout-to
+  test_fun_sqlite.stdout
+  (run ./test_fun_sqlite.exe)))
