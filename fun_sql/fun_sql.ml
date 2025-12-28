@@ -8,7 +8,9 @@ module type Query_sig = sig
   val sql : ('a, Format.formatter, unit, string) format4 -> 'a
   (** Convenience for formatting query strings with placeholders. Eg
 
-    {[sql "select name from people where id = %a" placeholder 0]} *)
+      {[
+        sql "select name from people where id = %a" placeholder 0
+      ]} *)
 
   type (-'row, 'r) ret
   (** A decoder of a single row of the resultset from running a query. *)
@@ -18,17 +20,18 @@ module type Query_sig = sig
 
   val ret : ('row -> 'r) -> ('row, 'r Seq.t) ret
   (** [ret decode] is a custom return type encoding for a resultset into a
-    sequence of values of the type decoded by [decode].
+      sequence of values of the type decoded by [decode].
 
-    [decode] constructs a value of the custom type if possible, else raises
-    [Failure].
+      [decode] constructs a value of the custom type if possible, else raises
+      [Failure].
 
-    Note that the sequence rows of the resultset is unfolded as it is read from
-    the database. It can only be traversed {i once,} with e.g. [List.of_seq] or
-    [Seq.iter]. If traversed multiple times, it will raise [Failure].
+      Note that the sequence rows of the resultset is unfolded as it is read
+      from the database. It can only be traversed {i once,} with e.g.
+      [List.of_seq] or [Seq.iter]. If traversed multiple times, it will raise
+      [Failure].
 
-    @raise Invalid_argument if any row cannot be decoded.
-    @raise Failure if an unexpected result code is encountered. *)
+      @raise Invalid_argument if any row cannot be decoded.
+      @raise Failure if an unexpected result code is encountered. *)
 
   val one : 'a Seq.t -> 'a option
   val all : 'a Seq.t -> 'a list
@@ -50,9 +53,9 @@ module Query = struct
   (** Thrown if we are expecting at most one result but get more. *)
 
   (** [one seq] is [Some a] if [a] is the first and only element of [seq], or
-    [None] if [seq] is empty.
+      [None] if [seq] is empty.
 
-    @raise More_than_one if [seq] contains more than one element.  *)
+      @raise More_than_one if [seq] contains more than one element. *)
   let one seq =
     match seq () with
     | Seq.Nil -> None
@@ -88,29 +91,34 @@ module type Sql = sig
 
   val query : db -> string -> arg list -> (row, 'r) Query.ret -> 'r
   (** The main function through which queries are run is the [query] function.
-      This function {e always} creates a prepared statement for each partial call
-      to [query db sql]. This prepared statement can then be called with the
-      actual arguments (if any) and the resultset row decoder:
+      This function {e always} creates a prepared statement for each partial
+      call to [query db sql]. This prepared statement can then be called with
+      the actual arguments (if any) and the resultset row decoder:
 
-      {[let add_person =
-          query db (sql "insert into people (name, age) values (%a, %a)" placeholder 0 placeholder 1)
-        let add_person name age = add_person Arg.[text name; int age] unit]}
+      {[
+        let add_person =
+          query db
+            (sql "insert into people (name, age) values (%a, %a)" placeholder 0
+               placeholder 1)
 
-      @raise Invalid_argument if trying to create multiple prepared statements
-        for the same SQL query in PostgreSQL. To avoid this, just create the
-        prepared statement {e once only} and call it whenever needed, as shown
-        above. *)
+        let add_person name age = add_person Arg.[text name; int age] unit
+      ]}
+
+      @raise Invalid_argument
+        if trying to create multiple prepared statements for the same SQL query
+        in PostgreSQL. To avoid this, just create the prepared statement
+        {e once only} and call it whenever needed, as shown above. *)
 
   val exec_script : db -> string -> unit
-  (** [exec_script db sql] executes the [sql] script (possibly made up of multiple
-    statements) in the database [db]. Note that it ignores any rows returned by
-    any of the statements.
+  (** [exec_script db sql] executes the [sql] script (possibly made up of
+      multiple statements) in the database [db]. Note that it ignores any rows
+      returned by any of the statements.
 
-    The script {i must not} have a trailing semicolon. *)
+      The script {i must not} have a trailing semicolon. *)
 
   (** {2 Binding arguments}
 
-    These encode OCaml data as data to be bound to the query statement. *)
+      These encode OCaml data as data to be bound to the query statement. *)
 
   module Arg : sig
     val text : string -> arg
@@ -134,13 +142,13 @@ module type Sql = sig
   val float : int -> row -> float
 
   val text : int -> row -> string
-  (** Also handles values of all other types. Use this when SQLite can change the
-    exact type of value it returns at runtime, e.g. for very large numbers it
-    can return text. *)
+  (** Also handles values of all other types. Use this when SQLite can change
+      the exact type of value it returns at runtime, e.g. for very large numbers
+      it can return text. *)
 
   val opt : (int -> row -> 'a) -> int -> row -> 'a option
   (** [opt dec col row] is the optional value [NULL] turns to [None] at column
-    [col] of the result [row]. *)
+      [col] of the result [row]. *)
 end
 
 (** Utilities defined in terms of the common shared interface of a database. *)
@@ -154,25 +162,25 @@ module type S = sig
 
   val migrate : db -> string -> unit
   (** [migrate db dir] applies the SQL migration scripts in [dir] on the given
-    database [db], keeping track of those that have already been applied.
+      database [db], keeping track of those that have already been applied.
 
-    To apply the migrations in the correct order, the migration scripts must be
-    given filenames that are sorted in lexicographical order of the desired
-    migration order, e.g. [0000_0001_init.sql] will be applied before
-    [0000_0002_sec.sql], and so on.
+      To apply the migrations in the correct order, the migration scripts must
+      be given filenames that are sorted in lexicographical order of the desired
+      migration order, e.g. [0000_0001_init.sql] will be applied before
+      [0000_0002_sec.sql], and so on.
 
-    Note that this uses [exec_script] internally, which means the migration
-    scripts {i must not} have trailing semicolons either.
+      Note that this uses [exec_script] internally, which means the migration
+      scripts {i must not} have trailing semicolons either.
 
-    Any files with extensions other than [.sql] are ignored.
+      Any files with extensions other than [.sql] are ignored.
 
-    @raise Bad_migration an error occurs during applying the migrations. *)
+      @raise Bad_migration an error occurs during applying the migrations. *)
 
   val transaction : db -> (unit -> 'r) -> 'r
   (** [transaction db f] runs [f ()] inside a transaction in the [db]. If the
-    operation succeeds, it commits the transaction and returns its result. If it
-    fails with an exception, it rolls back the transaction and re-raises the
-    exception. *)
+      operation succeeds, it commits the transaction and returns its result. If
+      it fails with an exception, it rolls back the transaction and re-raises
+      the exception. *)
 end
 
 module Make (Sql : Sql) : S with type db = Sql.db and type arg = Sql.arg =
@@ -183,13 +191,13 @@ struct
   open Sql
 
   let transaction db f =
-    query db "begin" [] Query.unit;
+    exec_script db "begin";
     match f () with
     | r ->
-      query db "commit" [] Query.unit;
+      exec_script db "commit";
       r
     | exception e ->
-      query db "rollback" [] Query.unit;
+      exec_script db "rollback";
       raise e
 
   let slurp file =

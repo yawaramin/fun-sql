@@ -49,21 +49,15 @@ let query : type r. db -> string -> arg list -> (row, r) ret -> r =
       in
       Seq.unfold rows ()
 
-let rec exec_script db attempts stmt =
-  match step stmt, attempts with
+let rec exec_script db attempts sql =
+  match exec db sql, attempts with
   | Rc.BUSY, 0 -> failwith "busy"
-  | BUSY, _ -> exec_script db (pred attempts) stmt
-  | ROW, _ -> exec_script db attempts stmt
-  | (DONE | OK), _ ->
-    check_rc @@ finalize stmt;
-    begin
-      match prepare_tail stmt with
-      | Some stmt -> exec_script db attempts stmt
-      | None -> ()
-    end
-  | rc, _ -> invalid_arg @@ Rc.to_string rc
+  | BUSY, _ -> exec_script db (pred attempts) sql
+  | ROW, _ -> exec_script db attempts sql
+  | (DONE | OK), _ -> ()
+  | rc, _ -> rc |> Rc.to_string |> invalid_arg
 
-let exec_script db sql = exec_script db 3 @@ prepare db sql
+let exec_script db = exec_script db 3
 
 module Arg = struct
   let text value = Data.TEXT value
